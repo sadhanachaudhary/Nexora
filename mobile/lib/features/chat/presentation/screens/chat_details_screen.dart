@@ -8,6 +8,8 @@ import '../providers/messages_provider.dart';
 import '../../data/repositories/user_repository.dart';
 import '../../../../core/widgets/app_avatar.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../widgets/e2ee_security_sheet.dart';
+import '../widgets/disappearing_messages_sheet.dart';
 
 class ChatDetailsScreen extends ConsumerStatefulWidget {
   final String conversationId;
@@ -152,13 +154,24 @@ class _ChatDetailsScreenState extends ConsumerState<ChatDetailsScreen> {
                       _buildQuickAction(
                         icon: Icons.timer_outlined,
                         label: 'Disappear',
-                        onTap: () => _showDisappearingMessagesSheet(context),
+                        onTap: () => DisappearingMessagesSheet.show(
+                          context,
+                          currentTimer: _disappearingTimer,
+                          onSelected: (val) {
+                            setState(() => _disappearingTimer = val);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Disappearing messages set to $_disappearingTimer'),
+                              ),
+                            );
+                          },
+                        ),
                       ),
                       const SizedBox(width: 14),
                       _buildQuickAction(
                         icon: Icons.lock_outline_rounded,
                         label: 'Verify',
-                        onTap: () => _showEncryptionVerification(context, displayName),
+                        onTap: () => E2EESecuritySheet.show(context, displayName),
                       ),
                     ],
                   ),
@@ -266,7 +279,7 @@ class _ChatDetailsScreenState extends ConsumerState<ChatDetailsScreen> {
           title: const Text('End-to-End Encryption', style: TextStyle(fontWeight: FontWeight.w600)),
           subtitle: const Text('Messages and calls are secured with 256-bit keys'),
           trailing: const Icon(Icons.chevron_right_rounded),
-          onTap: () => _showEncryptionVerification(context, displayName),
+          onTap: () => E2EESecuritySheet.show(context, displayName),
         ),
         ListTile(
           leading: Container(
@@ -280,7 +293,18 @@ class _ChatDetailsScreenState extends ConsumerState<ChatDetailsScreen> {
           title: const Text('Disappearing Messages', style: TextStyle(fontWeight: FontWeight.w600)),
           subtitle: Text('Current timer: $_disappearingTimer'),
           trailing: const Icon(Icons.chevron_right_rounded),
-          onTap: () => _showDisappearingMessagesSheet(context),
+          onTap: () => DisappearingMessagesSheet.show(
+            context,
+            currentTimer: _disappearingTimer,
+            onSelected: (val) {
+              setState(() => _disappearingTimer = val);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Disappearing messages set to $_disappearingTimer'),
+                ),
+              );
+            },
+          ),
         ),
         SwitchListTile(
           secondary: Container(
@@ -628,187 +652,6 @@ class _ChatDetailsScreenState extends ConsumerState<ChatDetailsScreen> {
               ),
             );
           },
-        );
-      },
-    );
-  }
-
-  void _showDisappearingMessagesSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        final options = ['Off', '24 Hours', '7 Days', '90 Days'];
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.timer_outlined,
-                        color: Theme.of(context).colorScheme.primary,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Text(
-                      'Disappearing Messages',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'When enabled, new messages sent in this chat will automatically disappear after the selected duration.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                ...options.map((opt) {
-                  return RadioListTile<String>(
-                    title: Text(opt, style: const TextStyle(fontWeight: FontWeight.w600)),
-                    value: opt,
-                    groupValue: _disappearingTimer,
-                    onChanged: (val) {
-                      setState(() => _disappearingTimer = val ?? 'Off');
-                      Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Disappearing messages set to $_disappearingTimer'),
-                        ),
-                      );
-                    },
-                  );
-                }),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showEncryptionVerification(BuildContext context, String displayName) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (ctx) {
-        final cs = Theme.of(context).colorScheme;
-        return SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.shield_outlined, color: Colors.green, size: 36),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Verify Security Code',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'To verify end-to-end encryption with $displayName, scan this QR code or compare the 60-digit number below.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: cs.onSurface.withValues(alpha: 0.6),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Mock QR Code block
-                Container(
-                  width: 140,
-                  height: 140,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: cs.outline.withValues(alpha: 0.3)),
-                  ),
-                  child: Center(
-                    child: Icon(Icons.qr_code_2_rounded, size: 120, color: Colors.grey.shade900),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // 60-digit safety numbers in 4 lines
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: cs.surfaceContainer,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: cs.outline.withValues(alpha: 0.2)),
-                  ),
-                  child: const Column(
-                    children: [
-                      Text(
-                        '48291  04829  85739  19402',
-                        style: TextStyle(fontFamily: 'monospace', fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 1.2),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        '94820  18492  03928  48201',
-                        style: TextStyle(fontFamily: 'monospace', fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 1.2),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        '84729  39582  01948  57204',
-                        style: TextStyle(fontFamily: 'monospace', fontSize: 14, fontWeight: FontWeight.w700, letterSpacing: 1.2),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: cs.primary,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('✓ Security number verified successfully!'),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
-                    label: const Text('Mark as Verified', style: TextStyle(fontWeight: FontWeight.w700)),
-                  ),
-                ),
-              ],
-            ),
-          ),
         );
       },
     );
