@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../domain/models/message.dart';
 import 'media_bubbles.dart';
+import 'enterprise_bubbles.dart';
 
 class SwipeableMessageBubble extends StatelessWidget {
   final Message message;
@@ -11,6 +12,9 @@ class SwipeableMessageBubble extends StatelessWidget {
   final VoidCallback onReply;
   final VoidCallback onLongPress;
   final ValueChanged<String> onReactionTap;
+  final VoidCallback? onPayInvoice;
+  final VoidCallback? onToggleTask;
+  final Function(int optionIndex)? onVotePoll;
 
   const SwipeableMessageBubble({
     super.key,
@@ -22,6 +26,9 @@ class SwipeableMessageBubble extends StatelessWidget {
     required this.onReply,
     required this.onLongPress,
     required this.onReactionTap,
+    this.onPayInvoice,
+    this.onToggleTask,
+    this.onVotePoll,
   });
 
   @override
@@ -130,6 +137,45 @@ class SwipeableMessageBubble extends StatelessWidget {
                       if (message.type == 'DOCUMENT' && message.content != null)
                         DocumentBubbleWidget(
                           content: message.content!,
+                          isMe: isMe,
+                        ),
+
+                      // ── In-Thread Payment / Invoice ──────────
+                      if (message.type == 'PAYMENT')
+                        PaymentBubbleWidget(
+                          message: message,
+                          isMe: isMe,
+                          onPaid: onPayInvoice,
+                        ),
+
+                      // ── In-Chat Task ────────────────────────
+                      if (message.type == 'TASK')
+                        TaskBubbleWidget(
+                          message: message,
+                          isMe: isMe,
+                          onToggle: onToggleTask,
+                        ),
+
+                      // ── Interactive Poll ─────────────────────
+                      if (message.type == 'POLL')
+                        PollBubbleWidget(
+                          message: message,
+                          isMe: isMe,
+                          currentUserId: currentUserId,
+                          onVote: onVotePoll,
+                        ),
+
+                      // ── Incoming Webhook Alert ───────────────
+                      if (message.type == 'WEBHOOK')
+                        WebhookBubbleWidget(
+                          message: message,
+                          isMe: isMe,
+                        ),
+
+                      // ── Live Location Streaming Beacon ───────
+                      if (message.type == 'LIVE_LOCATION')
+                        LiveLocationBubbleWidget(
+                          message: message,
                           isMe: isMe,
                         ),
 

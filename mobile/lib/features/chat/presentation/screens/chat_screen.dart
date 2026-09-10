@@ -20,6 +20,9 @@ import '../widgets/empty_chat_state.dart';
 import '../widgets/attachment_sheet.dart';
 import '../widgets/voice_recording_bar.dart';
 import '../widgets/message_bubble.dart';
+import '../widgets/create_invoice_sheet.dart';
+import '../widgets/create_task_sheet.dart';
+import '../widgets/create_poll_sheet.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final String conversationId;
@@ -606,6 +609,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                             currentUser?.id ?? '',
                           );
                         },
+                        onPayInvoice: () => controller.payInvoice(message.id),
+                        onToggleTask: () => controller.toggleTaskStatus(message.id),
+                        onVotePoll: (optIdx) => controller.votePoll(
+                          message.id,
+                          optIdx,
+                          currentUser?.id ?? '',
+                        ),
                       );
                     },
                   );
@@ -688,9 +698,57 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
       onGallery: () => _pickAndSendImage(ImageSource.gallery),
       onDocument: () => _sendSampleDocument(context),
       onLocation: () => _showLocationPicker(context),
+      onLiveLocation: () {
+        ref.read(messagesProvider(widget.conversationId)).sendLiveLocation(
+          durationMinutes: 60,
+          latitude: 37.7749,
+          longitude: -122.4194,
+          senderName: 'You',
+        );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Live location beacon active for 60m')),
+        );
+      },
+      onInvoice: () {
+        CreateInvoiceSheet.show(
+          context,
+          onSubmit: (title, amount, currency, dueDate) {
+            ref.read(messagesProvider(widget.conversationId)).sendInvoice(
+              title: title,
+              amount: amount,
+              currency: currency,
+              dueDate: dueDate,
+            );
+          },
+        );
+      },
+      onTask: () {
+        CreateTaskSheet.show(
+          context,
+          onSubmit: (title, priority, dueDate, assignee) {
+            ref.read(messagesProvider(widget.conversationId)).sendTask(
+              title: title,
+              priority: priority,
+              dueDate: dueDate,
+              assignee: assignee,
+            );
+          },
+        );
+      },
+      onPoll: () {
+        CreatePollSheet.show(
+          context,
+          onSubmit: (question, options) {
+            ref.read(messagesProvider(widget.conversationId)).sendPoll(
+              question: question,
+              options: options,
+            );
+          },
+        );
+      },
       onContact: () {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Contact picker opened')),
+          const SnackBar(content: Text('Contact card shared')),
         );
       },
     );

@@ -313,6 +313,148 @@ class MessagesController {
     );
   }
 
+  void sendInvoice({
+    required String title,
+    required double amount,
+    required String currency,
+    required String dueDate,
+  }) {
+    final socketService = _ref.read(socketServiceProvider);
+    final invoiceData = {
+      'title': title,
+      'amount': amount,
+      'currency': currency,
+      'dueDate': dueDate,
+      'status': 'UNPAID',
+    };
+    socketService.sendMessage(
+      conversationId: _conversationId,
+      content: jsonEncode(invoiceData),
+      type: 'PAYMENT',
+    );
+  }
+
+  void payInvoice(String messageId) {
+    final updatedMessages = state.value.messages.map((m) {
+      if (m.id == messageId) {
+        try {
+          final data = jsonDecode(m.content ?? '{}');
+          if (data is Map) {
+            data['status'] = 'PAID';
+            return m.copyWith(content: jsonEncode(data));
+          }
+        } catch (_) {}
+      }
+      return m;
+    }).toList();
+    state.value = state.value.copyWith(messages: updatedMessages);
+  }
+
+  void sendTask({
+    required String title,
+    required String priority,
+    required String dueDate,
+    required String assignee,
+  }) {
+    final socketService = _ref.read(socketServiceProvider);
+    final taskData = {
+      'title': title,
+      'priority': priority,
+      'dueDate': dueDate,
+      'assignee': assignee,
+      'isCompleted': false,
+    };
+    socketService.sendMessage(
+      conversationId: _conversationId,
+      content: jsonEncode(taskData),
+      type: 'TASK',
+    );
+  }
+
+  void toggleTaskStatus(String messageId) {
+    final updatedMessages = state.value.messages.map((m) {
+      if (m.id == messageId) {
+        try {
+          final data = jsonDecode(m.content ?? '{}');
+          if (data is Map) {
+            final current = data['isCompleted'] ?? false;
+            data['isCompleted'] = !current;
+            return m.copyWith(content: jsonEncode(data));
+          }
+        } catch (_) {}
+      }
+      return m;
+    }).toList();
+    state.value = state.value.copyWith(messages: updatedMessages);
+  }
+
+  void sendPoll({
+    required String question,
+    required List<String> options,
+  }) {
+    final socketService = _ref.read(socketServiceProvider);
+    final pollData = {
+      'question': question,
+      'options': options.map((opt) => {'text': opt, 'voters': []}).toList(),
+    };
+    socketService.sendMessage(
+      conversationId: _conversationId,
+      content: jsonEncode(pollData),
+      type: 'POLL',
+    );
+  }
+
+  void votePoll(String messageId, int optionIndex, String currentUserId) {
+    final updatedMessages = state.value.messages.map((m) {
+      if (m.id == messageId) {
+        try {
+          final data = jsonDecode(m.content ?? '{}');
+          if (data is Map) {
+            final options = List<dynamic>.from(data['options'] ?? []);
+            for (var i = 0; i < options.length; i++) {
+              final voters = List<String>.from(options[i]['voters'] ?? []);
+              if (i == optionIndex) {
+                if (voters.contains(currentUserId)) {
+                  voters.remove(currentUserId);
+                } else {
+                  voters.add(currentUserId);
+                }
+              } else {
+                voters.remove(currentUserId);
+              }
+              options[i]['voters'] = voters;
+            }
+            data['options'] = options;
+            return m.copyWith(content: jsonEncode(data));
+          }
+        } catch (_) {}
+      }
+      return m;
+    }).toList();
+    state.value = state.value.copyWith(messages: updatedMessages);
+  }
+
+  void sendLiveLocation({
+    required int durationMinutes,
+    required double latitude,
+    required double longitude,
+    String? senderName,
+  }) {
+    final socketService = _ref.read(socketServiceProvider);
+    final liveData = {
+      'durationMins': durationMinutes,
+      'lat': latitude,
+      'lng': longitude,
+      'senderName': senderName ?? 'User',
+      'startTime': DateTime.now().toIso8601String(),
+    };
+    socketService.sendMessage(
+      conversationId: _conversationId,
+      content: jsonEncode(liveData),
+      type: 'LIVE_LOCATION',
+    );
+  }
+
   void deleteMessage(String messageId) {
     final socketService = _ref.read(socketServiceProvider);
     socketService.sendDeleteMessage(

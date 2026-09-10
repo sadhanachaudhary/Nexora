@@ -7,6 +7,7 @@ import userRoutes from './routes/user.routes';
 import conversationRoutes from './routes/conversation.routes';
 import messageRoutes from './routes/message.routes';
 import uploadRoutes from './routes/upload.routes';
+import webhookRoutes from './routes/webhook.routes';
 
 const app = express();
 
@@ -21,6 +22,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/conversations', conversationRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/webhooks', webhookRoutes);
 
 // Basic health check
 app.get('/health', (req, res) => {

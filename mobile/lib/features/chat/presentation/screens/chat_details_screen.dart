@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../domain/models/conversation.dart';
@@ -26,6 +27,7 @@ class ChatDetailsScreen extends ConsumerStatefulWidget {
 class _ChatDetailsScreenState extends ConsumerState<ChatDetailsScreen> {
   String _disappearingTimer = 'Off';
   bool _isMuted = false;
+  bool _isAdminOnlyBroadcast = false;
 
   @override
   Widget build(BuildContext context) {
@@ -325,6 +327,72 @@ class _ChatDetailsScreenState extends ConsumerState<ChatDetailsScreen> {
                 content: Text(val ? 'Notifications muted' : 'Notifications unmuted'),
                 duration: const Duration(seconds: 1),
               ),
+            );
+          },
+        ),
+
+        const Divider(height: 24),
+
+        // ── Enterprise & Developer Section ──
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+          child: Text(
+            'ENTERPRISE & DEVELOPER',
+            style: tt.bodySmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.1,
+              color: cs.onSurface.withValues(alpha: 0.45),
+            ),
+          ),
+        ),
+        if (isGroup)
+          SwitchListTile(
+            secondary: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF7C3AED).withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.campaign_rounded, color: Color(0xFF7C3AED), size: 20),
+            ),
+            title: const Text('Admin-Only Broadcast', style: TextStyle(fontWeight: FontWeight.w600)),
+            subtitle: const Text('Only administrators can send messages in this channel'),
+            value: _isAdminOnlyBroadcast,
+            onChanged: (val) {
+              setState(() => _isAdminOnlyBroadcast = val);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(val ? 'Broadcast mode enabled (Admins only)' : 'Standard chat mode enabled'),
+                ),
+              );
+            },
+          ),
+        ListTile(
+          leading: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.blue.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.webhook_rounded, color: Colors.blue, size: 20),
+          ),
+          title: const Text('Incoming Webhook Pipeline', style: TextStyle(fontWeight: FontWeight.w600)),
+          subtitle: const Text('Post GitHub, CI/CD, & Stripe alerts directly into this chat'),
+          trailing: IconButton(
+            icon: const Icon(Icons.copy_rounded, size: 18),
+            onPressed: () {
+              final url = 'http://localhost:3001/api/webhooks/${widget.conversationId}';
+              Clipboard.setData(ClipboardData(text: url));
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Webhook URL copied to clipboard!')),
+              );
+            },
+          ),
+          onTap: () {
+            final url = 'http://localhost:3001/api/webhooks/${widget.conversationId}';
+            Clipboard.setData(ClipboardData(text: url));
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Webhook URL copied to clipboard!')),
             );
           },
         ),
