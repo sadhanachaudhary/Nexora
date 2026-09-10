@@ -11,7 +11,7 @@ export class MessageController {
 
   getMessages = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const { conversationId } = req.params;
+      const conversationId = req.params.conversationId as string;
       const limit = parseInt(req.query.limit as string) || 50;
       const cursor = req.query.cursor as string;
 
@@ -25,7 +25,7 @@ export class MessageController {
   sendMessage = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const senderId = req.user.id;
-      const { conversationId } = req.params;
+      const conversationId = req.params.conversationId as string;
       const { content, type, attachmentUrl, replyToId } = req.body;
 
       if (!content && !attachmentUrl) {

@@ -99,14 +99,16 @@ class SocketService {
 
   void sendMessage({
     required String conversationId,
-    required String content,
+    String? content,
     String type = 'TEXT',
+    String? attachmentUrl,
     String? replyToId,
   }) {
     _socket?.emit('sendMessage', {
       'conversationId': conversationId,
-      'content': content,
+      if (content != null) 'content': content,
       'type': type,
+      if (attachmentUrl != null) 'attachmentUrl': attachmentUrl,
       if (replyToId != null) 'replyToId': replyToId,
     });
   }

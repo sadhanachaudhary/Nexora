@@ -4,19 +4,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../chat/presentation/providers/conversations_provider.dart';
 import '../../../chat/data/repositories/user_repository.dart';
 import '../../../chat/domain/models/conversation.dart';
+import '../../../chat/presentation/screens/chat_screen.dart';
 import '../../../../core/theme/app_theme.dart';
 
-class HomeScreen extends ConsumerWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  String? _selectedConversationId;
+  String? _selectedConversationName;
+
+  @override
+  Widget build(BuildContext context) {
+    final isWideScreen = MediaQuery.of(context).size.width >= 850;
     final conversationsAsync = ref.watch(conversationsProvider);
     final currentUserAsync = ref.watch(currentUserProvider);
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
 
-    return Scaffold(
+    Widget leftPane = Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
@@ -76,10 +86,28 @@ class HomeScreen extends ConsumerWidget {
                 final currentUserId = currentUserAsync.value?.id ?? '';
                 return Column(
                   children: List.generate(conversations.length, (i) {
+                    final conv = conversations[i];
+                    final name = conv.getDisplayName(currentUserId);
+                    final isSelected = isWideScreen && conv.id == _selectedConversationId;
+
                     return _ConversationTile(
-                      conversation: conversations[i],
+                      conversation: conv,
                       currentUserId: currentUserId,
+                      isSelected: isSelected,
                       isLast: i == conversations.length - 1,
+                      onTap: () {
+                        if (isWideScreen) {
+                          setState(() {
+                            _selectedConversationId = conv.id;
+                            _selectedConversationName = name;
+                          });
+                        } else {
+                          context.push(
+                            '/chat/${conv.id}',
+                            extra: {'name': name},
+                          );
+                        }
+                      },
                     );
                   }),
                 );
@@ -98,6 +126,39 @@ class HomeScreen extends ConsumerWidget {
         onPressed: () => _showNewChatMenu(context, ref),
         icon: const Icon(Icons.add_rounded, size: 22),
         label: const Text('New Chat', style: TextStyle(fontWeight: FontWeight.w700)),
+      ),
+    );
+
+    if (!isWideScreen) {
+      return leftPane;
+    }
+
+    // Wide screen Dual-Pane layout
+    return Scaffold(
+      body: Row(
+        children: [
+          // Left Sidebar Conversation List
+          SizedBox(
+            width: 380,
+            child: leftPane,
+          ),
+          // Vertical divider
+          VerticalDivider(
+            width: 1,
+            thickness: 1,
+            color: cs.outline.withValues(alpha: 0.2),
+          ),
+          // Right Chat Area
+          Expanded(
+            child: _selectedConversationId != null
+                ? ChatScreen(
+                    key: ValueKey(_selectedConversationId),
+                    conversationId: _selectedConversationId!,
+                    conversationName: _selectedConversationName ?? 'Chat',
+                  )
+                : _SplitEmptyChatPlaceholder(),
+          ),
+        ],
       ),
     );
   }
@@ -349,12 +410,16 @@ class _SkeletonListState extends State<_SkeletonList>
 class _ConversationTile extends StatelessWidget {
   final Conversation conversation;
   final String currentUserId;
+  final bool isSelected;
   final bool isLast;
+  final VoidCallback onTap;
 
   const _ConversationTile({
     required this.conversation,
     required this.currentUserId,
+    this.isSelected = false,
     this.isLast = false,
+    required this.onTap,
   });
 
   @override
@@ -389,14 +454,13 @@ class _ConversationTile extends StatelessWidget {
 
     final avatarGradient = AppTheme.avatarGradient(displayName.codeUnitAt(0));
 
-    return InkWell(
-      onTap: () => context.push(
-        '/chat/${conversation.id}',
-        extra: {'name': conversation.getDisplayName(currentUserId)},
-      ),
-      child: Column(
-        children: [
-          Padding(
+    return Container(
+      color: isSelected ? cs.primary.withValues(alpha: 0.12) : null,
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          children: [
+            Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
             child: Row(
               children: [
@@ -503,3 +567,66 @@ class _ConversationTile extends StatelessWidget {
     );
   }
 }
+
+// ── Split screen empty placeholder ─────────────────────────────────────────────
+
+class _SplitEmptyChatPlaceholder extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 88,
+            height: 88,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF7C3AED).withValues(alpha: 0.2),
+                  const Color(0xFF4F46E5).withValues(alpha: 0.1),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF7C3AED).withValues(alpha: 0.15),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.chat_bubble_outline_rounded,
+              size: 40,
+              color: Color(0xFF7C3AED),
+            ),
+          ),
+          const SizedBox(height: 20),
+          Text(
+            'Nexora Desktop',
+            style: tt.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Select a conversation on the left to start chatting,\nor tap + to start a new chat or create a group room.',
+            textAlign: TextAlign.center,
+            style: tt.bodyMedium?.copyWith(
+              color: cs.onSurface.withValues(alpha: 0.5),
+              height: 1.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+

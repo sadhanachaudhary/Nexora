@@ -237,11 +237,39 @@ class MessagesController {
     );
   }
 
-  void sendImageMessage(String base64Image) {
+  void sendImageMessage(String attachmentUrl) {
     final socketService = _ref.read(socketServiceProvider);
     socketService.sendImageMessage(
       conversationId: _conversationId,
-      attachmentUrl: base64Image,
+      attachmentUrl: attachmentUrl,
+    );
+  }
+
+  void sendVoiceMessage(String audioUrl, int durationSeconds) {
+    final socketService = _ref.read(socketServiceProvider);
+    socketService.sendMessage(
+      conversationId: _conversationId,
+      content: '$durationSeconds',
+      type: 'VOICE',
+      attachmentUrl: audioUrl,
+    );
+  }
+
+  void sendLocationMessage({
+    required double latitude,
+    required double longitude,
+    String? locationName,
+  }) {
+    final socketService = _ref.read(socketServiceProvider);
+    final locationData = {
+      'lat': latitude,
+      'lng': longitude,
+      'name': locationName ?? 'Current Location',
+    };
+    socketService.sendMessage(
+      conversationId: _conversationId,
+      content: jsonEncode(locationData),
+      type: 'LOCATION',
     );
   }
 

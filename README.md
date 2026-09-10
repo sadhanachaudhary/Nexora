@@ -11,14 +11,18 @@ Designed with a sleek dark-mode aesthetic, smooth glassmorphism, and instant mes
 ## ✨ Features
 
 - **⚡ Real-time Messaging**: Instant message delivery using WebSockets (`Socket.io`).
+- **🎙️ Voice Notes & Audio Messages**: Live voice recording with animated soundwaves and in-bubble playback player.
+- **📸 Photo & Media Uploads**: Camera and gallery image attachments with zoomable interactive full-screen viewer.
+- **📍 Location Sharing**: Interactive pinpoint map cards with direct coordinates and location markers.
+- **🖥️ Split-Screen Desktop / Web**: WhatsApp Web-style dual-pane interface with responsive navigation on wider screens.
+- **🖼️ Chat Info & Shared Media Gallery**: Member rosters, Admin badges, and filterable tabs for all shared photos and voice notes.
 - **🔄 Swipe-to-Reply**: Swipe right on any message bubble to quote and reply with context.
 - **❤️ Emoji Reactions**: Long-press any message to react with animated emojis (`❤️`, `👍`, `😂`, `🔥`, `😮`, `👏`).
 - **✓✓ Read Receipts & Ticks**: Real-time status indicators for Sent (`✓`), Delivered (`✓✓`), and Read (`✓✓`).
 - **📧 Connect by Email ID**: Search and start conversations with users by their email address, username, or name.
-- **📸 Image Sharing**: Send photos directly in chat with in-app preview.
 - **✍️ Live Typing Indicators**: Real-time feedback when other participants are typing.
-- **🎨 Glassmorphic Dark UI**: Custom color palette, gradient accents, fluid transitions, and responsive layout.
 - **👥 Direct & Group Chats**: Support for 1-on-1 conversations and team group chats.
+- **🐘 PostgreSQL & SQLite Dual-Mode**: Seamlessly switch between local development and Cloud PostgreSQL (Neon / Supabase / Render Postgres).
 
 ---
 

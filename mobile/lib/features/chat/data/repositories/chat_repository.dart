@@ -58,4 +58,21 @@ class ChatRepository {
     });
     return Conversation.fromJson(response.data);
   }
+
+  Future<String> uploadFileBytes(List<int> bytes, String filename) async {
+    final formData = FormData.fromMap({
+      'file': MultipartFile.fromBytes(bytes, filename: filename),
+    });
+    final response = await _dio.post('/upload', data: formData);
+    return response.data['url'] as String;
+  }
+
+  Future<String> uploadFilePath(String filePath, String filename) async {
+    final formData = FormData.fromMap({
+      'file': await MultipartFile.fromFile(filePath, filename: filename),
+    });
+    final response = await _dio.post('/upload', data: formData);
+    return response.data['url'] as String;
+  }
 }
+

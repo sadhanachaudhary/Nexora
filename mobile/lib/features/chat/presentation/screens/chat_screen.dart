@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -6,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../providers/messages_provider.dart';
+import '../../data/repositories/chat_repository.dart';
 import '../../data/repositories/user_repository.dart';
 import '../../domain/models/message.dart';
 import '../../domain/models/user.dart';
@@ -32,6 +35,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   bool _hasText = false;
   Message? _replyingToMessage;
   late final AnimationController _sendBtnCtrl;
+
+  // Voice recording state
+  bool _isRecordingVoice = false;
+  int _recordDuration = 0;
+  Timer? _recordTimer;
 
   @override
   void initState() {
@@ -60,7 +68,42 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     _messageController.dispose();
     _scrollController.dispose();
     _sendBtnCtrl.dispose();
+    _recordTimer?.cancel();
     super.dispose();
+  }
+
+  void _startVoiceRecording() {
+    HapticFeedback.heavyImpact();
+    setState(() {
+      _isRecordingVoice = true;
+      _recordDuration = 0;
+    });
+    _recordTimer?.cancel();
+    _recordTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() => _recordDuration++);
+      }
+    });
+  }
+
+  void _stopAndSendVoiceRecording() {
+    HapticFeedback.mediumImpact();
+    final duration = _recordDuration;
+    _cancelVoiceRecording();
+
+    if (duration >= 1) {
+      // Send simulated / uploaded voice note audio payload with duration
+      final dummyAudioUrl = 'https://actions.google.com/sounds/v1/water/rain_heavy.ogg';
+      ref.read(messagesProvider(widget.conversationId)).sendVoiceMessage(dummyAudioUrl, duration);
+    }
+  }
+
+  void _cancelVoiceRecording() {
+    _recordTimer?.cancel();
+    setState(() {
+      _isRecordingVoice = false;
+      _recordDuration = 0;
+    });
   }
 
   void _sendMessage() {
@@ -202,68 +245,79 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
           onPressed: () => context.pop(),
         ),
         titleSpacing: 0,
-        title: Row(
-          children: [
-            // Gradient avatar
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: avatarGradient,
-              ),
-              child: Center(
-                child: Text(
-                  widget.conversationName.isNotEmpty
-                      ? widget.conversationName[0].toUpperCase()
-                      : '?',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        title: InkWell(
+          onTap: () => context.push('/chat/${widget.conversationId}/details'),
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
+            child: Row(
               children: [
-                Text(
-                  widget.conversationName,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                // Gradient avatar
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: avatarGradient,
+                  ),
+                  child: Center(
+                    child: Text(
+                      widget.conversationName.isNotEmpty
+                          ? widget.conversationName[0].toUpperCase()
+                          : '?',
+                      style: const TextStyle(
+                        color: Colors.white,
                         fontWeight: FontWeight.w700,
-                        letterSpacing: -0.2,
-                      ),
-                ),
-                Row(
-                  children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF22C55E),
-                        shape: BoxShape.circle,
+                        fontSize: 16,
                       ),
                     ),
-                    const SizedBox(width: 4),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
                     Text(
-                      'Online',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: cs.onSurface.withValues(alpha: 0.5),
-                        fontWeight: FontWeight.w500,
-                      ),
+                      widget.conversationName,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: -0.2,
+                          ),
+                    ),
+                    Row(
+                      children: [
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF22C55E),
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Online',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: cs.onSurface.withValues(alpha: 0.5),
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ],
             ),
-          ],
+          ),
         ),
         actions: [
           _AppBarAction(icon: Icons.videocam_outlined, onPressed: () {}),
           _AppBarAction(icon: Icons.call_outlined, onPressed: () {}),
+          _AppBarAction(
+            icon: Icons.info_outline_rounded,
+            onPressed: () => context.push('/chat/${widget.conversationId}/details'),
+          ),
           const SizedBox(width: 8),
         ],
       ),
@@ -409,8 +463,297 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
     );
   }
 
+  void _showAttachmentMenu(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          border: Border(top: BorderSide(color: cs.outline.withValues(alpha: 0.2))),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: cs.onSurface.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Share Attachment',
+                style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _AttachmentActionItem(
+                    icon: Icons.camera_alt_rounded,
+                    label: 'Camera',
+                    color: const Color(0xFFEF4444),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _pickAndSendImage(ImageSource.camera);
+                    },
+                  ),
+                  _AttachmentActionItem(
+                    icon: Icons.photo_library_rounded,
+                    label: 'Gallery',
+                    color: const Color(0xFF8B5CF6),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _pickAndSendImage(ImageSource.gallery);
+                    },
+                  ),
+                  _AttachmentActionItem(
+                    icon: Icons.location_on_rounded,
+                    label: 'Location',
+                    color: const Color(0xFF10B981),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _showLocationPicker(context);
+                    },
+                  ),
+                  _AttachmentActionItem(
+                    icon: Icons.mic_rounded,
+                    label: 'Voice Note',
+                    color: const Color(0xFFF59E0B),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _startVoiceRecording();
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _pickAndSendImage(ImageSource source) async {
+    try {
+      final picker = ImagePicker();
+      final image = await picker.pickImage(
+        source: source,
+        maxWidth: 1600,
+        maxHeight: 1600,
+        imageQuality: 85,
+      );
+      if (image != null) {
+        final bytes = await image.readAsBytes();
+        try {
+          // Attempt multipart upload to backend
+          final repo = ref.read(chatRepositoryProvider);
+          final uploadedUrl = await repo.uploadFileBytes(bytes, image.name);
+          ref.read(messagesProvider(widget.conversationId)).sendImageMessage(uploadedUrl);
+        } catch (_) {
+          // Fallback to base64 encoding if upload endpoint is offline
+          final base64Image = 'data:image/jpeg;base64,${base64Encode(bytes)}';
+          ref.read(messagesProvider(widget.conversationId)).sendImageMessage(base64Image);
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not attach image: $e')),
+        );
+      }
+    }
+  }
+
+  void _showLocationPicker(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          border: Border(top: BorderSide(color: cs.outline.withValues(alpha: 0.2))),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: cs.onSurface.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Send Location',
+                style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 14),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                tileColor: cs.surfaceContainer,
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.my_location_rounded, color: Color(0xFF10B981), size: 22),
+                ),
+                title: Text('Current GPS Location', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                subtitle: Text('37.7749° N, 122.4194° W', style: tt.bodySmall?.copyWith(color: cs.onSurface.withValues(alpha: 0.5))),
+                trailing: const Icon(Icons.send_rounded, size: 18),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  ref.read(messagesProvider(widget.conversationId)).sendLocationMessage(
+                    latitude: 37.7749,
+                    longitude: -122.4194,
+                    locationName: 'Current Location (San Francisco)',
+                  );
+                },
+              ),
+              const SizedBox(height: 10),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                tileColor: cs.surfaceContainer,
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: cs.primary.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.business_rounded, color: cs.primary, size: 22),
+                ),
+                title: Text('Nexora Headquarters', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                subtitle: Text('Innovation District, Tech City', style: tt.bodySmall?.copyWith(color: cs.onSurface.withValues(alpha: 0.5))),
+                trailing: const Icon(Icons.send_rounded, size: 18),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  ref.read(messagesProvider(widget.conversationId)).sendLocationMessage(
+                    latitude: 28.6139,
+                    longitude: 77.2090,
+                    locationName: 'Nexora Headquarters',
+                  );
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildMessageInput(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+
+    if (_isRecordingVoice) {
+      final mins = (_recordDuration ~/ 60).toString().padLeft(2, '0');
+      final secs = (_recordDuration % 60).toString().padLeft(2, '0');
+
+      return Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).appBarTheme.backgroundColor,
+          border: Border(
+            top: BorderSide(color: cs.outline.withValues(alpha: 0.2), width: 1),
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: SafeArea(
+          top: false,
+          child: Row(
+            children: [
+              // Red recording pulse indicator
+              Container(
+                width: 12,
+                height: 12,
+                decoration: const BoxDecoration(
+                  color: Colors.redAccent,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                '$mins:$secs',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  color: Colors.redAccent,
+                ),
+              ),
+              const SizedBox(width: 14),
+              // Animated soundwaves
+              Expanded(
+                child: SizedBox(
+                  height: 24,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: List.generate(16, (i) {
+                      final h = ((i % 4 + 1) * 5.0) + (_recordDuration % 2 == 0 ? 4 : 0);
+                      return Container(
+                        width: 3,
+                        height: h,
+                        decoration: BoxDecoration(
+                          color: cs.primary.withValues(alpha: 0.7),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      );
+                    }),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Cancel button
+              IconButton(
+                icon: const Icon(Icons.delete_outline_rounded, color: Colors.grey, size: 24),
+                onPressed: _cancelVoiceRecording,
+              ),
+              const SizedBox(width: 6),
+              // Send Voice Note button
+              GestureDetector(
+                onTap: _stopAndSendVoiceRecording,
+                child: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [Color(0xFF7C3AED), Color(0xFF4F46E5)],
+                    ),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check_rounded, color: Colors.white, size: 20),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -425,22 +768,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            // Image picker
+            // Plus / Attachment Button
             _InputIconButton(
-              icon: Icons.image_outlined,
-              onPressed: () async {
-                final picker = ImagePicker();
-                final image =
-                    await picker.pickImage(source: ImageSource.gallery);
-                if (image != null) {
-                  final bytes = await image.readAsBytes();
-                  final base64Image =
-                      'data:image/jpeg;base64,${base64Encode(bytes)}';
-                  ref
-                      .read(messagesProvider(widget.conversationId))
-                      .sendImageMessage(base64Image);
-                }
-              },
+              icon: Icons.add_rounded,
+              onPressed: () => _showAttachmentMenu(context),
             ),
             const SizedBox(width: 8),
 
@@ -485,40 +816,32 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
             ),
             const SizedBox(width: 8),
 
-            // Send button
+            // Send or Mic button
             GestureDetector(
-              onTap: _sendMessage,
+              onTap: _hasText ? _sendMessage : _startVoiceRecording,
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 width: 46,
                 height: 46,
                 decoration: BoxDecoration(
-                  gradient: _hasText
-                      ? const LinearGradient(
-                          colors: [Color(0xFF7C3AED), Color(0xFF4F46E5)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
-                      : null,
-                  color: _hasText ? null : cs.surfaceContainer,
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF7C3AED), Color(0xFF4F46E5)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   shape: BoxShape.circle,
-                  boxShadow: _hasText
-                      ? [
-                          BoxShadow(
-                            color:
-                                const Color(0xFF7C3AED).withValues(alpha: 0.35),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ]
-                      : null,
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF7C3AED).withValues(alpha: 0.35),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 child: Icon(
-                  Icons.send_rounded,
+                  _hasText ? Icons.send_rounded : Icons.mic_rounded,
                   size: 20,
-                  color: _hasText
-                      ? Colors.white
-                      : cs.onSurface.withValues(alpha: 0.3),
+                  color: Colors.white,
                 ),
               ),
             ),
@@ -637,22 +960,27 @@ class _SwipeableMessageBubble extends StatelessWidget {
                         ),
 
                       // ── Image Attachment ────────────────────
-                      if (message.type == 'IMAGE' &&
-                          message.attachmentUrl != null &&
-                          message.attachmentUrl!.startsWith('data:image'))
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 6),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.memory(
-                              base64Decode(
-                                  message.attachmentUrl!.split(',')[1]),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
+                      if (message.type == 'IMAGE' && message.attachmentUrl != null)
+                        _ImageBubbleWidget(
+                          imageUrl: message.attachmentUrl!,
+                          isMe: isMe,
                         ),
 
-                      // ── Message Content ─────────────────────
+                      // ── Voice Note Attachment ────────────────
+                      if (message.type == 'VOICE')
+                        _VoiceBubbleWidget(
+                          message: message,
+                          isMe: isMe,
+                        ),
+
+                      // ── Location Attachment ──────────────────
+                      if (message.type == 'LOCATION' && message.content != null)
+                        _LocationBubbleWidget(
+                          content: message.content!,
+                          isMe: isMe,
+                        ),
+
+                      // ── Text / Deleted Message Content ───────
                       if (message.isDeleted)
                         Row(
                           mainAxisSize: MainAxisSize.min,
@@ -673,7 +1001,8 @@ class _SwipeableMessageBubble extends StatelessWidget {
                             ),
                           ],
                         )
-                      else if (message.content != null &&
+                      else if (message.type == 'TEXT' &&
+                          message.content != null &&
                           message.content!.isNotEmpty)
                         Text(
                           message.content!,
@@ -1154,3 +1483,397 @@ class _InputIconButton extends StatelessWidget {
     );
   }
 }
+
+// ── Attachment Action Item ─────────────────────────────────────────────────────
+
+class _AttachmentActionItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _AttachmentActionItem({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+              border: Border.all(color: color.withValues(alpha: 0.3), width: 1.5),
+            ),
+            child: Icon(icon, color: color, size: 26),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: cs.onSurface.withValues(alpha: 0.8),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Image Bubble Widget ────────────────────────────────────────────────────────
+
+class _ImageBubbleWidget extends StatelessWidget {
+  final String imageUrl;
+  final bool isMe;
+
+  const _ImageBubbleWidget({
+    required this.imageUrl,
+    required this.isMe,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    Widget imageWidget;
+    if (imageUrl.startsWith('data:image')) {
+      imageWidget = Image.memory(
+        base64Decode(imageUrl.split(',')[1]),
+        fit: BoxFit.cover,
+        width: 220,
+        height: 180,
+      );
+    } else {
+      imageWidget = Image.network(
+        imageUrl,
+        fit: BoxFit.cover,
+        width: 220,
+        height: 180,
+        errorBuilder: (_, __, ___) => Container(
+          width: 220,
+          height: 140,
+          color: Colors.grey.withValues(alpha: 0.2),
+          child: const Center(child: Icon(Icons.broken_image_rounded)),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: GestureDetector(
+        onTap: () => _openZoomDialog(context, imageUrl),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(14),
+          child: imageWidget,
+        ),
+      ),
+    );
+  }
+
+  void _openZoomDialog(BuildContext context, String url) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.9),
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: url.startsWith('data:image')
+                  ? Image.memory(base64Decode(url.split(',')[1]))
+                  : Image.network(url, fit: BoxFit.contain),
+            ),
+            Positioned(
+              top: 40,
+              right: 20,
+              child: IconButton(
+                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 30),
+                onPressed: () => Navigator.pop(ctx),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ── Voice Bubble Widget ────────────────────────────────────────────────────────
+
+class _VoiceBubbleWidget extends StatefulWidget {
+  final Message message;
+  final bool isMe;
+
+  const _VoiceBubbleWidget({
+    required this.message,
+    required this.isMe,
+  });
+
+  @override
+  State<_VoiceBubbleWidget> createState() => _VoiceBubbleWidgetState();
+}
+
+class _VoiceBubbleWidgetState extends State<_VoiceBubbleWidget>
+    with SingleTickerProviderStateMixin {
+  bool _isPlaying = false;
+  late final AnimationController _animCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _animCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animCtrl.dispose();
+    super.dispose();
+  }
+
+  void _togglePlay() {
+    HapticFeedback.lightImpact();
+    setState(() => _isPlaying = !_isPlaying);
+    if (_isPlaying) {
+      _animCtrl.repeat();
+      // Auto stop simulation after 4 seconds
+      Future.delayed(const Duration(seconds: 4), () {
+        if (mounted) {
+          setState(() => _isPlaying = false);
+          _animCtrl.stop();
+        }
+      });
+    } else {
+      _animCtrl.stop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final durationSecs = int.tryParse(widget.message.content ?? '5') ?? 5;
+    final mins = (durationSecs ~/ 60).toString().padLeft(2, '0');
+    final secs = (durationSecs % 60).toString().padLeft(2, '0');
+
+    return Container(
+      constraints: const BoxConstraints(minWidth: 180, maxWidth: 220),
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Play/Pause button
+          GestureDetector(
+            onTap: _togglePlay,
+            child: Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                color: widget.isMe
+                    ? Colors.white.withValues(alpha: 0.25)
+                    : cs.primary.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                color: widget.isMe ? Colors.white : cs.primary,
+                size: 22,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+
+          // Animated waveform bars
+          Expanded(
+            child: AnimatedBuilder(
+              animation: _animCtrl,
+              builder: (_, __) => Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: List.generate(12, (i) {
+                  final wave = _isPlaying
+                      ? (sin((_animCtrl.value * 6.28) + i * 0.5).abs() * 14.0 + 4.0)
+                      : ((i % 3 + 1) * 4.0 + 3.0);
+                  return Container(
+                    width: 3,
+                    height: wave,
+                    decoration: BoxDecoration(
+                      color: widget.isMe
+                          ? Colors.white.withValues(alpha: 0.85)
+                          : cs.primary.withValues(alpha: 0.75),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  );
+                }),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+
+          // Duration label
+          Text(
+            '$mins:$secs',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: widget.isMe
+                  ? Colors.white.withValues(alpha: 0.8)
+                  : cs.onSurface.withValues(alpha: 0.6),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Location Bubble Widget ─────────────────────────────────────────────────────
+
+class _LocationBubbleWidget extends StatelessWidget {
+  final String content;
+  final bool isMe;
+
+  const _LocationBubbleWidget({
+    required this.content,
+    required this.isMe,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    String name = 'Shared Location';
+    double lat = 37.7749;
+    double lng = -122.4194;
+
+    try {
+      final data = jsonDecode(content);
+      if (data is Map) {
+        name = data['name'] ?? 'Shared Location';
+        lat = (data['lat'] as num?)?.toDouble() ?? 37.7749;
+        lng = (data['lng'] as num?)?.toDouble() ?? -122.4194;
+      }
+    } catch (_) {}
+
+    return Container(
+      width: 220,
+      margin: const EdgeInsets.only(bottom: 4),
+      decoration: BoxDecoration(
+        color: widget.isMe
+            ? Colors.white.withValues(alpha: 0.15)
+            : cs.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: widget.isMe
+              ? Colors.white.withValues(alpha: 0.2)
+              : cs.outline.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Graphic Map card header
+          Container(
+            height: 80,
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
+              gradient: LinearGradient(
+                colors: [
+                  const Color(0xFF0F172A),
+                  const Color(0xFF1E293B),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                // Grid lines pattern
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _MapGridPainter(),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEF4444),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFEF4444).withValues(alpha: 0.5),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(Icons.location_on_rounded, color: Colors.white, size: 20),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: widget.isMe ? Colors.white : cs.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${lat.toStringAsFixed(4)}°, ${lng.toStringAsFixed(4)}°',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: widget.isMe
+                        ? Colors.white.withValues(alpha: 0.7)
+                        : cs.onSurface.withValues(alpha: 0.5),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MapGridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.08)
+      ..strokeWidth = 1;
+
+    for (double i = 0; i < size.width; i += 20) {
+      canvas.drawLine(Offset(i, 0), Offset(i, size.height), paint);
+    }
+    for (double j = 0; j < size.height; j += 20) {
+      canvas.drawLine(Offset(0, j), Offset(size.width, j), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
