@@ -4,6 +4,8 @@ A modern, real-time chat application built with **Flutter** on the frontend and 
 
 Designed with a sleek dark-mode aesthetic, smooth glassmorphism, and instant messaging interactions.
 
+🌐 **Live Backend API**: [https://nexora-mtwu.onrender.com](https://nexora-mtwu.onrender.com) (Deployed on Render)
+
 ---
 
 ## ✨ Features

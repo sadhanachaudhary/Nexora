@@ -1,9 +1,8 @@
 import 'package:flutter/foundation.dart';
 
 class AppConfig {
-  /// Set this to your live Render backend URL after deploying on Render
-  /// Example: 'https://nexora-backend.onrender.com'
-  static const String _productionUrl = '';
+  /// Live Render backend URL
+  static const String _productionUrl = 'https://nexora-mtwu.onrender.com';
 
   /// Toggle between production and local development automatically
   static bool get isProduction => _productionUrl.isNotEmpty;
