@@ -14,6 +14,7 @@ import '../../data/repositories/user_repository.dart';
 import '../../domain/models/message.dart';
 import '../../domain/models/user.dart';
 import '../../../../core/widgets/app_avatar.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final String conversationId;
@@ -1528,12 +1529,24 @@ class _ImageBubbleWidget extends StatelessWidget {
         height: 180,
       );
     } else {
-      imageWidget = Image.network(
-        imageUrl,
+      imageWidget = CachedNetworkImage(
+        imageUrl: imageUrl,
         fit: BoxFit.cover,
         width: 220,
         height: 180,
-        errorBuilder: (_, __, ___) => Container(
+        placeholder: (_, __) => Container(
+          width: 220,
+          height: 180,
+          color: Colors.grey.withValues(alpha: 0.15),
+          child: const Center(
+            child: SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2),
+            ),
+          ),
+        ),
+        errorWidget: (_, __, ___) => Container(
           width: 220,
           height: 140,
           color: Colors.grey.withValues(alpha: 0.2),

@@ -7,6 +7,7 @@ import '../providers/conversations_provider.dart';
 import '../providers/messages_provider.dart';
 import '../../data/repositories/user_repository.dart';
 import '../../../../core/widgets/app_avatar.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class ChatDetailsScreen extends ConsumerWidget {
   final String conversationId;
@@ -253,10 +254,20 @@ class ChatDetailsScreen extends ConsumerWidget {
                 fit: BoxFit.cover,
               );
             } else {
-              imageWidget = Image.network(
-                url,
+              imageWidget = CachedNetworkImage(
+                imageUrl: url,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                placeholder: (_, __) => Container(
+                  color: cs.surfaceContainer.withValues(alpha: 0.5),
+                  child: const Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                ),
+                errorWidget: (_, __, ___) => Container(
                   color: cs.surfaceContainer,
                   child: const Icon(Icons.broken_image_rounded),
                 ),

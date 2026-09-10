@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../theme/app_theme.dart';
 
 class AppAvatar extends StatelessWidget {
@@ -27,12 +28,16 @@ class AppAvatar extends StatelessWidget {
 
     Widget avatarContent;
     if (avatarUrl != null && avatarUrl!.isNotEmpty) {
-      avatarContent = Image.network(
-        avatarUrl!,
+      avatarContent = CachedNetworkImage(
+        imageUrl: avatarUrl!,
         width: size,
         height: size,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _buildGradientFallback(gradient, initial),
+        memCacheWidth: (size * 2.5).toInt(),
+        memCacheHeight: (size * 2.5).toInt(),
+        fadeInDuration: const Duration(milliseconds: 150),
+        placeholder: (_, __) => _buildGradientFallback(gradient, initial),
+        errorWidget: (_, __, ___) => _buildGradientFallback(gradient, initial),
       );
     } else {
       avatarContent = _buildGradientFallback(gradient, initial);
