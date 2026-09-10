@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/message.dart';
+import '../providers/messages_provider.dart';
 import 'checkout_sheet.dart';
 
 // ── 1. Payment / Invoice Bubble Widget ────────────────────────────────────────
@@ -657,7 +659,7 @@ class WebhookBubbleWidget extends StatelessWidget {
 
 // ── 5. Live Location Streaming Bubble Widget ──────────────────────────────────
 
-class LiveLocationBubbleWidget extends StatefulWidget {
+class LiveLocationBubbleWidget extends ConsumerStatefulWidget {
   final Message message;
   final bool isMe;
 
@@ -668,10 +670,12 @@ class LiveLocationBubbleWidget extends StatefulWidget {
   });
 
   @override
-  State<LiveLocationBubbleWidget> createState() => _LiveLocationBubbleWidgetState();
+  ConsumerState<LiveLocationBubbleWidget> createState() =>
+      _LiveLocationBubbleWidgetState();
 }
 
-class _LiveLocationBubbleWidgetState extends State<LiveLocationBubbleWidget>
+class _LiveLocationBubbleWidgetState
+    extends ConsumerState<LiveLocationBubbleWidget>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulseCtrl;
 
@@ -697,6 +701,7 @@ class _LiveLocationBubbleWidgetState extends State<LiveLocationBubbleWidget>
     double lat = 37.7749;
     double lng = -122.4194;
     String senderName = 'User';
+    bool isEnded = false;
 
     try {
       final data = jsonDecode(widget.message.content ?? '{}');
@@ -705,6 +710,7 @@ class _LiveLocationBubbleWidgetState extends State<LiveLocationBubbleWidget>
         lat = (data['lat'] as num?)?.toDouble() ?? 37.7749;
         lng = (data['lng'] as num?)?.toDouble() ?? -122.4194;
         senderName = data['senderName'] ?? 'Live Location';
+        isEnded = data['isEnded'] == true;
       }
     } catch (_) {}
 
@@ -717,7 +723,9 @@ class _LiveLocationBubbleWidgetState extends State<LiveLocationBubbleWidget>
             : cs.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: widget.isMe ? Colors.white.withValues(alpha: 0.2) : cs.outline.withValues(alpha: 0.2),
+          color: widget.isMe
+              ? Colors.white.withValues(alpha: 0.2)
+              : cs.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
@@ -726,54 +734,80 @@ class _LiveLocationBubbleWidgetState extends State<LiveLocationBubbleWidget>
           // Live Map Radar Canvas
           Container(
             height: 90,
-            decoration: const BoxDecoration(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(15)),
-              gradient: LinearGradient(
-                colors: [Color(0xFF064E3B), Color(0xFF0F172A)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
+              gradient: isEnded
+                  ? const LinearGradient(
+                      colors: [Color(0xFF334155), Color(0xFF1E293B)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    )
+                  : const LinearGradient(
+                      colors: [Color(0xFF064E3B), Color(0xFF0F172A)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
             ),
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Pulse waves
-                AnimatedBuilder(
-                  animation: _pulseCtrl,
-                  builder: (context, child) {
-                    final val = _pulseCtrl.value;
-                    return Container(
-                      width: 30 + val * 50,
-                      height: 30 + val * 50,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: Colors.greenAccent.withValues(alpha: (1 - val) * 0.4),
-                      ),
-                    );
-                  },
-                ),
+                // Pulse waves (only when active)
+                if (!isEnded)
+                  AnimatedBuilder(
+                    animation: _pulseCtrl,
+                    builder: (context, child) {
+                      final val = _pulseCtrl.value;
+                      return Container(
+                        width: 30 + val * 50,
+                        height: 30 + val * 50,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.greenAccent
+                              .withValues(alpha: (1 - val) * 0.4),
+                        ),
+                      );
+                    },
+                  ),
                 Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF10B981),
+                  decoration: BoxDecoration(
+                    color: isEnded ? Colors.grey.shade600 : const Color(0xFF10B981),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.navigation_rounded, color: Colors.white, size: 20),
+                  child: Icon(
+                    isEnded
+                        ? Icons.location_off_rounded
+                        : Icons.navigation_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
                 Positioned(
                   top: 8,
                   right: 8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: Colors.redAccent,
+                      color: isEnded ? Colors.grey.shade700 : Colors.redAccent,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(Icons.circle, color: Colors.white, size: 6),
-                        SizedBox(width: 4),
-                        Text('LIVE', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w800)),
+                        Icon(
+                          Icons.circle,
+                          color: isEnded ? Colors.white70 : Colors.white,
+                          size: 6,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          isEnded ? 'ENDED' : 'LIVE',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -796,12 +830,49 @@ class _LiveLocationBubbleWidgetState extends State<LiveLocationBubbleWidget>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Active for $durationMins mins • ${lat.toStringAsFixed(3)}°, ${lng.toStringAsFixed(3)}°',
+                  isEnded
+                      ? 'Live location sharing ended'
+                      : 'Active for $durationMins mins • ${lat.toStringAsFixed(3)}°, ${lng.toStringAsFixed(3)}°',
                   style: TextStyle(
                     fontSize: 11,
-                    color: widget.isMe ? Colors.white70 : cs.onSurface.withValues(alpha: 0.55),
+                    color: widget.isMe
+                        ? Colors.white70
+                        : cs.onSurface.withValues(alpha: 0.55),
                   ),
                 ),
+                // Stop sharing button
+                if (widget.isMe && !isEnded) ...[
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 32,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red.shade400,
+                        side: BorderSide(
+                          color: Colors.red.shade400.withValues(alpha: 0.5),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: () {
+                        ref
+                            .read(messagesProvider(widget.message.conversationId))
+                            .stopLiveLocation(widget.message.id);
+                      },
+                      icon: const Icon(Icons.stop_circle_outlined, size: 15),
+                      label: const Text(
+                        'Stop Sharing',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

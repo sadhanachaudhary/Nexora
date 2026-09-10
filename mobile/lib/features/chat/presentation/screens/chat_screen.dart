@@ -13,6 +13,7 @@ import '../../data/repositories/user_repository.dart';
 import '../../domain/models/message.dart';
 import '../../domain/models/conversation.dart';
 import '../../domain/models/user.dart';
+import '../../../../core/services/notification_service.dart';
 import '../../../../core/widgets/app_avatar.dart';
 import '../widgets/smart_replies_bar.dart';
 import '../widgets/typing_indicator.dart';
@@ -56,6 +57,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(activeConversationIdProvider.notifier).setActive(widget.conversationId);
+    });
     _sendBtnCtrl = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 200),
@@ -77,6 +81,9 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(activeConversationIdProvider.notifier).setActive(null);
+    });
     _messageController.dispose();
     _scrollController.dispose();
     _searchQueryController.dispose();

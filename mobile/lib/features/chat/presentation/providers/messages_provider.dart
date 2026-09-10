@@ -447,12 +447,29 @@ class MessagesController {
       'lng': longitude,
       'senderName': senderName ?? 'User',
       'startTime': DateTime.now().toIso8601String(),
+      'isEnded': false,
     };
     socketService.sendMessage(
       conversationId: _conversationId,
       content: jsonEncode(liveData),
       type: 'LIVE_LOCATION',
     );
+  }
+
+  void stopLiveLocation(String messageId) {
+    final updatedMessages = state.value.messages.map((m) {
+      if (m.id == messageId) {
+        try {
+          final data = jsonDecode(m.content ?? '{}');
+          if (data is Map) {
+            data['isEnded'] = true;
+            return m.copyWith(content: jsonEncode(data));
+          }
+        } catch (_) {}
+      }
+      return m;
+    }).toList();
+    state.value = state.value.copyWith(messages: updatedMessages);
   }
 
   void deleteMessage(String messageId) {

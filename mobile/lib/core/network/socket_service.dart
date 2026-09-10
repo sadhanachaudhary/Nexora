@@ -23,6 +23,12 @@ class SocketService {
   final _readController = StreamController<Map<String, dynamic>>.broadcast();
   Stream<Map<String, dynamic>> get readStream => _readController.stream;
 
+  final _notificationController = StreamController<Map<String, dynamic>>.broadcast();
+  Stream<Map<String, dynamic>> get notificationStream => _notificationController.stream;
+
+  final _callController = StreamController<Map<String, dynamic>>.broadcast();
+  Stream<Map<String, dynamic>> get callStream => _callController.stream;
+
   SocketService(this._storage);
 
   Future<void> connect() async {
@@ -49,6 +55,30 @@ class SocketService {
         _messageController.add(data);
       } else if (data is Map) {
         _messageController.add(Map<String, dynamic>.from(data));
+      }
+    });
+
+    _socket?.on('newNotification', (data) {
+      if (data is Map<String, dynamic>) {
+        _notificationController.add(data);
+      } else if (data is Map) {
+        _notificationController.add(Map<String, dynamic>.from(data));
+      }
+    });
+
+    _socket?.on('incomingCall', (data) {
+      if (data is Map<String, dynamic>) {
+        _callController.add({'event': 'incomingCall', ...data});
+      } else if (data is Map) {
+        _callController.add({'event': 'incomingCall', ...Map<String, dynamic>.from(data)});
+      }
+    });
+
+    _socket?.on('callEnded', (data) {
+      if (data is Map<String, dynamic>) {
+        _callController.add({'event': 'callEnded', ...data});
+      } else if (data is Map) {
+        _callController.add({'event': 'callEnded', ...Map<String, dynamic>.from(data)});
       }
     });
 
@@ -110,6 +140,32 @@ class SocketService {
       'type': type,
       if (attachmentUrl != null) 'attachmentUrl': attachmentUrl,
       if (replyToId != null) 'replyToId': replyToId,
+    });
+  }
+
+  void sendCallUser({
+    required String conversationId,
+    String? targetUserId,
+    required String callerName,
+    String? callerAvatar,
+    bool isVideo = false,
+  }) {
+    _socket?.emit('callUser', {
+      'conversationId': conversationId,
+      if (targetUserId != null) 'targetUserId': targetUserId,
+      'callerName': callerName,
+      if (callerAvatar != null) 'callerAvatar': callerAvatar,
+      'isVideo': isVideo,
+    });
+  }
+
+  void sendEndCall({
+    required String conversationId,
+    String? targetUserId,
+  }) {
+    _socket?.emit('endCall', {
+      'conversationId': conversationId,
+      if (targetUserId != null) 'targetUserId': targetUserId,
     });
   }
 

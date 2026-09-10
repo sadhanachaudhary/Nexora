@@ -23,6 +23,7 @@ class Conversation {
   final List<ConversationMember> members;
   final Message? latestMessage;
   final DateTime updatedAt;
+  final int unreadCount;
 
   Conversation({
     required this.id,
@@ -32,7 +33,30 @@ class Conversation {
     required this.members,
     this.latestMessage,
     required this.updatedAt,
+    this.unreadCount = 0,
   });
+
+  Conversation copyWith({
+    String? id,
+    bool? isGroup,
+    String? name,
+    String? imageUrl,
+    List<ConversationMember>? members,
+    Message? latestMessage,
+    DateTime? updatedAt,
+    int? unreadCount,
+  }) {
+    return Conversation(
+      id: id ?? this.id,
+      isGroup: isGroup ?? this.isGroup,
+      name: name ?? this.name,
+      imageUrl: imageUrl ?? this.imageUrl,
+      members: members ?? this.members,
+      latestMessage: latestMessage ?? this.latestMessage,
+      updatedAt: updatedAt ?? this.updatedAt,
+      unreadCount: unreadCount ?? this.unreadCount,
+    );
+  }
 
   factory Conversation.fromJson(Map<String, dynamic> json) {
     Message? latestMsg;
@@ -50,28 +74,32 @@ class Conversation {
           .toList(),
       latestMessage: latestMsg,
       updatedAt: DateTime.parse(json['updatedAt'] as String),
+      unreadCount: (json['unreadCount'] as int?) ?? 0,
     );
   }
 
   String getDisplayName(String currentUserId) {
-    if (isGroup && name != null) return name!;
+    if (isGroup && name != null && name!.isNotEmpty) return name!;
+    if (members.isEmpty) return name ?? 'Chat';
     
     // For direct chats, find the other user's name
-    final otherMember = members.firstWhere(
-      (m) => m.user.id != currentUserId,
-      orElse: () => members.first,
-    );
-    return otherMember.user.name ?? otherMember.user.username;
+    for (final member in members) {
+      if (member.user.id != currentUserId) {
+        return member.user.name ?? member.user.username;
+      }
+    }
+    return members.first.user.name ?? members.first.user.username;
   }
 
   String? getDisplayAvatarUrl(String currentUserId) {
     if (isGroup) return imageUrl;
-    
     if (members.isEmpty) return null;
-    final otherMember = members.firstWhere(
-      (m) => m.user.id != currentUserId,
-      orElse: () => members.first,
-    );
-    return otherMember.user.avatarUrl;
+    
+    for (final member in members) {
+      if (member.user.id != currentUserId) {
+        return member.user.avatarUrl;
+      }
+    }
+    return members.first.user.avatarUrl;
   }
 }

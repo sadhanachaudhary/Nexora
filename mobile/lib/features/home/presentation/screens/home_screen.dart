@@ -42,9 +42,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Messages',
-                  style: tt.headlineMedium?.copyWith(letterSpacing: -0.5),
+                Row(
+                  children: [
+                    Text(
+                      'Messages',
+                      style: tt.headlineMedium?.copyWith(letterSpacing: -0.5),
+                    ),
+                    if (conversationsAsync.value != null &&
+                        conversationsAsync.value!.fold<int>(0, (sum, c) => sum + c.unreadCount) > 0) ...[
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: cs.primary,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          '${conversationsAsync.value!.fold<int>(0, (sum, c) => sum + c.unreadCount)}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 Text(
                   currentUserAsync.when(
@@ -472,12 +495,24 @@ class _ConversationTile extends StatelessWidget {
     final lastMsg = conversation.latestMessage;
     String subtitle = 'Tap to chat';
     if (lastMsg != null) {
-      if (lastMsg.type == 'IMAGE') {
+      if (lastMsg.isDeleted) {
+        subtitle = 'This message was deleted';
+      } else if (lastMsg.type == 'IMAGE') {
         subtitle = '📷 Photo';
-      } else if (lastMsg.type == 'AUDIO') {
-        subtitle = '🎙️ Voice note';
+      } else if (lastMsg.type == 'AUDIO' || lastMsg.type == 'VOICE') {
+        subtitle = '🎙️ Voice message';
+      } else if (lastMsg.type == 'LIVE_LOCATION') {
+        subtitle = '📍 Live location';
       } else if (lastMsg.type == 'LOCATION') {
         subtitle = '📍 Shared location';
+      } else if (lastMsg.type == 'DOCUMENT') {
+        subtitle = '📎 Document';
+      } else if (lastMsg.type == 'PAYMENT') {
+        subtitle = '💳 Invoice';
+      } else if (lastMsg.type == 'TASK') {
+        subtitle = '📋 Task';
+      } else if (lastMsg.type == 'POLL') {
+        subtitle = '📊 Poll';
       } else {
         subtitle = lastMsg.content ?? 'Tap to chat';
       }
@@ -570,17 +605,45 @@ class _ConversationTile extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: tt.bodyMedium?.copyWith(
-                          color: isSelected
-                              ? cs.onSurface.withValues(alpha: 0.7)
-                              : cs.onSurface.withValues(alpha: 0.55),
-                          fontSize: 13.5,
-                          height: 1.3,
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              subtitle,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: tt.bodyMedium?.copyWith(
+                                color: conversation.unreadCount > 0
+                                    ? cs.onSurface
+                                    : (isSelected
+                                        ? cs.onSurface.withValues(alpha: 0.7)
+                                        : cs.onSurface.withValues(alpha: 0.55)),
+                                fontWeight: conversation.unreadCount > 0
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                                fontSize: 13.5,
+                                height: 1.3,
+                              ),
+                            ),
+                          ),
+                          if (conversation.unreadCount > 0)
+                            Container(
+                              margin: const EdgeInsets.only(left: 8),
+                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: cs.primary,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '${conversation.unreadCount}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ],
                   ),
