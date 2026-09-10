@@ -10,6 +10,7 @@ import '../../features/home/presentation/screens/search_users_screen.dart';
 import '../../features/home/presentation/screens/create_group_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
+import '../../features/chat/presentation/screens/call_screen.dart';
 
 import '../../features/auth/presentation/providers/auth_provider.dart';
 
@@ -53,6 +54,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final conversationId = state.pathParameters['id']!;
           return ChatDetailsScreen(conversationId: conversationId);
+        },
+      ),
+      GoRoute(
+        path: '/call',
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final conversationId = extra?['conversationId'] as String? ?? '';
+          final name = extra?['name'] as String? ?? 'Contact';
+          final avatarUrl = extra?['avatarUrl'] as String?;
+          final isVideo = extra?['isVideo'] as bool? ?? false;
+          return CallScreen(
+            conversationId: conversationId,
+            name: name,
+            avatarUrl: avatarUrl,
+            isVideo: isVideo,
+          );
         },
       ),
       GoRoute(

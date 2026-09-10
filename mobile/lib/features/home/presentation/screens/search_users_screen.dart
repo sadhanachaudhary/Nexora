@@ -556,6 +556,53 @@ class _UserCard extends StatelessWidget {
                   ),
                 ),
               ),
+              PopupMenuButton<String>(
+                icon: Icon(Icons.more_vert_rounded, color: cs.onSurface.withValues(alpha: 0.4), size: 18),
+                padding: EdgeInsets.zero,
+                onSelected: (val) {
+                  if (val == 'block') {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Blocked @${user.username}')),
+                    );
+                  } else if (val == 'audio_call') {
+                    context.push('/call', extra: {'isAudio': true, 'name': displayName, 'avatarUrl': user.avatarUrl});
+                  } else if (val == 'video_call') {
+                    context.push('/call', extra: {'isAudio': false, 'name': displayName, 'avatarUrl': user.avatarUrl});
+                  }
+                },
+                itemBuilder: (ctx) => [
+                  const PopupMenuItem(
+                    value: 'audio_call',
+                    child: Row(
+                      children: [
+                        Icon(Icons.call_rounded, size: 18),
+                        SizedBox(width: 10),
+                        Text('Voice Call'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'video_call',
+                    child: Row(
+                      children: [
+                        Icon(Icons.videocam_rounded, size: 18),
+                        SizedBox(width: 10),
+                        Text('Video Call'),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: 'block',
+                    child: Row(
+                      children: [
+                        Icon(Icons.block_rounded, size: 18, color: Colors.red),
+                        SizedBox(width: 10),
+                        Text('Block User', style: TextStyle(color: Colors.red)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ],
           ),
         ),

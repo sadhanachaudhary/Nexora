@@ -285,6 +285,34 @@ class MessagesController {
     _handleReactionEvent(messageId, currentUserId, emoji);
   }
 
+  void editMessage(String messageId, String newContent) {
+    final updatedMessages = state.value.messages.map((m) {
+      if (m.id == messageId) {
+        return m.copyWith(content: newContent, isEdited: true);
+      }
+      return m;
+    }).toList();
+    state.value = state.value.copyWith(messages: updatedMessages);
+  }
+
+  void sendDocumentMessage({
+    required String fileName,
+    required String fileSize,
+    required String fileUrl,
+  }) {
+    final socketService = _ref.read(socketServiceProvider);
+    final docData = {
+      'name': fileName,
+      'size': fileSize,
+    };
+    socketService.sendMessage(
+      conversationId: _conversationId,
+      content: jsonEncode(docData),
+      type: 'DOCUMENT',
+      attachmentUrl: fileUrl,
+    );
+  }
+
   void deleteMessage(String messageId) {
     final socketService = _ref.read(socketServiceProvider);
     socketService.sendDeleteMessage(

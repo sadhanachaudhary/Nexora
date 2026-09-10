@@ -13,6 +13,7 @@ class Message {
   final DateTime? deletedAt;
   final User? sender;
   final Map<String, List<String>> reactions; // emoji -> list of userIds
+  final bool isEdited;
 
   Message({
     required this.id,
@@ -27,6 +28,7 @@ class Message {
     this.deletedAt,
     this.sender,
     this.reactions = const {},
+    this.isEdited = false,
   });
 
   bool get isDeleted => deletedAt != null;
@@ -44,6 +46,7 @@ class Message {
     DateTime? deletedAt,
     User? sender,
     Map<String, List<String>>? reactions,
+    bool? isEdited,
   }) {
     return Message(
       id: id ?? this.id,
@@ -58,6 +61,7 @@ class Message {
       deletedAt: deletedAt ?? this.deletedAt,
       sender: sender ?? this.sender,
       reactions: reactions ?? this.reactions,
+      isEdited: isEdited ?? this.isEdited,
     );
   }
 
@@ -88,6 +92,7 @@ class Message {
           ? User.fromJson(json['sender'] as Map<String, dynamic>)
           : null,
       reactions: parsedReactions,
+      isEdited: (json['isEdited'] as bool?) ?? false,
     );
   }
 }
