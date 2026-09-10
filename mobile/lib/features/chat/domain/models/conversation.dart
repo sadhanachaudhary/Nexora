@@ -63,4 +63,15 @@ class Conversation {
     );
     return otherMember.user.name ?? otherMember.user.username;
   }
+
+  String? getDisplayAvatarUrl(String currentUserId) {
+    if (isGroup) return imageUrl;
+    
+    if (members.isEmpty) return null;
+    final otherMember = members.firstWhere(
+      (m) => m.user.id != currentUserId,
+      orElse: () => members.first,
+    );
+    return otherMember.user.avatarUrl;
+  }
 }

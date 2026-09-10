@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../chat/data/repositories/user_repository.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/app_avatar.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -14,11 +14,9 @@ class ProfileScreen extends ConsumerWidget {
     final currentUserAsync = ref.watch(currentUserProvider);
     final cs = Theme.of(context).colorScheme;
 
-    final name = currentUserAsync.value?.name ??
-        currentUserAsync.value?.username ??
-        'My Account';
-    final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
-    final avatarGradient = AppTheme.avatarGradient(name.codeUnitAt(0));
+    final user = currentUserAsync.value;
+    final name = user?.name ?? user?.username ?? 'My Account';
+    final avatarUrl = user?.avatarUrl;
 
     return Scaffold(
       body: CustomScrollView(
@@ -63,53 +61,13 @@ class ProfileScreen extends ConsumerWidget {
                       const SizedBox(height: 8),
 
                       // Avatar
-                      Stack(
-                        children: [
-                          Container(
-                            width: 96,
-                            height: 96,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: avatarGradient,
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.3),
-                                width: 3,
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: avatarGradient.colors.first
-                                      .withValues(alpha: 0.5),
-                                  blurRadius: 24,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: Center(
-                              child: Text(
-                                initial,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 38,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                            ),
-                          ),
-                          Positioned(
-                            bottom: 2,
-                            right: 2,
-                            child: Container(
-                              width: 26,
-                              height: 26,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFF22C55E),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                    color: const Color(0xFF1E1B4B), width: 2.5),
-                              ),
-                            ),
-                          ),
-                        ],
+                      AppAvatar(
+                        avatarUrl: avatarUrl,
+                        name: name,
+                        size: 96,
+                        fontSize: 38,
+                        showOnline: true,
+                        isOnline: true,
                       ),
                       const SizedBox(height: 14),
                       Text(

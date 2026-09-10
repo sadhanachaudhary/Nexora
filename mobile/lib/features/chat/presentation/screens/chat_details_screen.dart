@@ -3,11 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../domain/models/conversation.dart';
-import '../../domain/models/message.dart';
 import '../providers/conversations_provider.dart';
 import '../providers/messages_provider.dart';
 import '../../data/repositories/user_repository.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/app_avatar.dart';
 
 class ChatDetailsScreen extends ConsumerWidget {
   final String conversationId;
@@ -40,10 +39,6 @@ class ChatDetailsScreen extends ConsumerWidget {
     final displayName = conversation != null
         ? conversation.getDisplayName(currentUserId)
         : 'Chat Info';
-
-    final avatarGradient = AppTheme.avatarGradient(
-      displayName.isNotEmpty ? displayName.codeUnitAt(0) : 0,
-    );
 
     return DefaultTabController(
       length: 3,
@@ -86,30 +81,11 @@ class ChatDetailsScreen extends ConsumerWidget {
               ),
               child: Column(
                 children: [
-                  Container(
-                    width: 76,
-                    height: 76,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: avatarGradient,
-                      boxShadow: [
-                        BoxShadow(
-                          color: avatarGradient.colors.first.withValues(alpha: 0.35),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 30,
-                        ),
-                      ),
-                    ),
+                  AppAvatar(
+                    avatarUrl: conversation?.getDisplayAvatarUrl(currentUserId),
+                    name: displayName,
+                    size: 76,
+                    fontSize: 30,
                   ),
                   const SizedBox(height: 12),
                   Text(
@@ -181,28 +157,14 @@ class ChatDetailsScreen extends ConsumerWidget {
         final isMe = user.id == currentUserId;
         final name = isMe ? 'You' : (user.name ?? user.username);
         final email = user.email ?? user.username;
-        final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
-        final gradient = AppTheme.avatarGradient(name.codeUnitAt(0));
 
         return ListTile(
           contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          leading: Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: gradient,
-            ),
-            child: Center(
-              child: Text(
-                initial,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
-                ),
-              ),
-            ),
+          leading: AppAvatar(
+            avatarUrl: user.avatarUrl,
+            name: name,
+            size: 46,
+            fontSize: 18,
           ),
           title: Row(
             children: [

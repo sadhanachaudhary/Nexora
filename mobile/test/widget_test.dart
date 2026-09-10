@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:connectx/main.dart';
 
 void main() {
-  testWidgets('ConnectX app boots up successfully', (WidgetTester tester) async {
-    await tester.pumpWidget(const ProviderScope(child: ConnectXApp()));
+  testWidgets('Nexora app boots up successfully', (WidgetTester tester) async {
+    await tester.pumpWidget(const ProviderScope(child: NexoraApp()));
     
     // Allow the router to settle
     await tester.pumpAndSettle();

@@ -24,6 +24,7 @@ async function main() {
         password: await hash('password123'),
         name: 'Alice Johnson',
         bio: 'Designer & coffee enthusiast ☕',
+        avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=250&auto=format&fit=crop&q=80',
       },
     }),
     prisma.user.create({
@@ -33,6 +34,7 @@ async function main() {
         password: await hash('password123'),
         name: 'Bob Smith',
         bio: 'Backend dev. Loves hiking 🏔️',
+        avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=250&auto=format&fit=crop&q=80',
       },
     }),
     prisma.user.create({
@@ -42,6 +44,7 @@ async function main() {
         password: await hash('password123'),
         name: 'Carol White',
         bio: 'Product manager. Dog mom 🐶',
+        avatarUrl: 'https://images.unsplash.com/photo-1580489944761-15a19d654956?w=250&auto=format&fit=crop&q=80',
       },
     }),
     prisma.user.create({
@@ -51,6 +54,7 @@ async function main() {
         password: await hash('password123'),
         name: 'Dave Lee',
         bio: 'Full-stack engineer 💻',
+        avatarUrl: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=250&auto=format&fit=crop&q=80',
       },
     }),
     prisma.user.create({
@@ -60,6 +64,7 @@ async function main() {
         password: await hash('password123'),
         name: 'Eve Martinez',
         bio: 'ML researcher & avid reader 📚',
+        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=250&auto=format&fit=crop&q=80',
       },
     }),
   ]);

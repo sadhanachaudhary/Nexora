@@ -8,11 +8,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../providers/messages_provider.dart';
+import '../providers/conversations_provider.dart';
 import '../../data/repositories/chat_repository.dart';
 import '../../data/repositories/user_repository.dart';
 import '../../domain/models/message.dart';
 import '../../domain/models/user.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/app_avatar.dart';
 
 class ChatScreen extends ConsumerStatefulWidget {
   final String conversationId;
@@ -233,8 +234,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final avatarGradient =
-        AppTheme.avatarGradient(widget.conversationName.codeUnitAt(0));
+    final conversationsAsync = ref.watch(conversationsProvider);
+    final currentUserAsync = ref.watch(currentUserProvider);
+    final currentUserId = currentUserAsync.value?.id ?? '';
+    
+    final conversation = conversationsAsync.value?.where((c) => c.id == widget.conversationId).firstOrNull;
+    final avatarUrl = conversation?.getDisplayAvatarUrl(currentUserId);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -252,26 +257,11 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
             padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
             child: Row(
               children: [
-                // Gradient avatar
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: avatarGradient,
-                  ),
-                  child: Center(
-                    child: Text(
-                      widget.conversationName.isNotEmpty
-                          ? widget.conversationName[0].toUpperCase()
-                          : '?',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
+                AppAvatar(
+                  avatarUrl: avatarUrl,
+                  name: widget.conversationName,
+                  size: 40,
+                  fontSize: 16,
                 ),
                 const SizedBox(width: 10),
                 Column(
@@ -349,7 +339,10 @@ class _ChatScreenState extends ConsumerState<ChatScreen>
                     );
                   }
                   if (state.messages.isEmpty) {
-                    return _EmptyChatState(name: widget.conversationName);
+                    return _EmptyChatState(
+                      name: widget.conversationName,
+                      avatarUrl: avatarUrl,
+                    );
                   }
 
                   return ListView.builder(
@@ -1383,40 +1376,21 @@ class _TypingIndicatorState extends State<_TypingIndicator>
 
 class _EmptyChatState extends StatelessWidget {
   final String name;
-  const _EmptyChatState({required this.name});
+  final String? avatarUrl;
+  const _EmptyChatState({required this.name, this.avatarUrl});
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final avatarGradient = AppTheme.avatarGradient(name.codeUnitAt(0));
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: avatarGradient,
-              boxShadow: [
-                BoxShadow(
-                  color: avatarGradient.colors.first.withValues(alpha: 0.35),
-                  blurRadius: 20,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Center(
-              child: Text(
-                name.isNotEmpty ? name[0].toUpperCase() : '?',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
+          AppAvatar(
+            avatarUrl: avatarUrl,
+            name: name,
+            size: 72,
+            fontSize: 28,
           ),
           const SizedBox(height: 16),
           Text(

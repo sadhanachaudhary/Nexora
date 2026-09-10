@@ -6,7 +6,7 @@ import '../../../chat/data/repositories/user_repository.dart';
 import '../../../chat/data/repositories/chat_repository.dart';
 import '../../../chat/domain/models/user.dart';
 import '../../../chat/presentation/providers/conversations_provider.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/app_avatar.dart';
 
 final allContactsProvider = FutureProvider<List<User>>((ref) async {
   return ref.watch(userRepositoryProvider).searchUsers('');
@@ -228,8 +228,6 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: _selectedUsers.values.map((u) {
                   final name = u.name ?? u.username;
-                  final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
-                  final gradient = AppTheme.avatarGradient(name.codeUnitAt(0));
 
                   return Padding(
                     padding: const EdgeInsets.only(right: 12),
@@ -239,23 +237,11 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                         children: [
                           Column(
                             children: [
-                              Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: gradient,
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    initial,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
+                              AppAvatar(
+                                avatarUrl: u.avatarUrl,
+                                name: name,
+                                size: 44,
+                                fontSize: 16,
                               ),
                               const SizedBox(height: 4),
                               SizedBox(
@@ -403,10 +389,6 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                     final user = filtered[i];
                     final isSelected = _selectedUserIds.contains(user.id);
                     final displayName = user.name ?? user.username;
-                    final initial =
-                        displayName.isNotEmpty ? displayName[0].toUpperCase() : '?';
-                    final gradient =
-                        AppTheme.avatarGradient(displayName.codeUnitAt(0));
 
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 8),
@@ -431,23 +413,11 @@ class _CreateGroupScreenState extends ConsumerState<CreateGroupScreen> {
                           ),
                           child: Row(
                             children: [
-                              Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: gradient,
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    initial,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
+                              AppAvatar(
+                                avatarUrl: user.avatarUrl,
+                                name: displayName,
+                                size: 44,
+                                fontSize: 16,
                               ),
                               const SizedBox(width: 12),
                               Expanded(

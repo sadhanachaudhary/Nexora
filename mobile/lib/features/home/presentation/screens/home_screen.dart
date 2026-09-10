@@ -5,7 +5,7 @@ import '../../../chat/presentation/providers/conversations_provider.dart';
 import '../../../chat/data/repositories/user_repository.dart';
 import '../../../chat/domain/models/conversation.dart';
 import '../../../chat/presentation/screens/chat_screen.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/app_avatar.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -58,13 +58,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             ),
             actions: [
               IconButton(
-                icon: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: cs.surfaceContainer,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.person_outline_rounded, size: 20, color: cs.primary),
+                icon: AppAvatar(
+                  avatarUrl: currentUserAsync.value?.avatarUrl,
+                  name: currentUserAsync.value?.name ?? currentUserAsync.value?.username ?? 'Me',
+                  size: 38,
+                  fontSize: 14,
                 ),
                 onPressed: () => context.push('/profile'),
               ),
@@ -425,7 +423,6 @@ class _ConversationTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final displayName = conversation.getDisplayName(currentUserId);
-    final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : '?';
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
 
@@ -452,8 +449,6 @@ class _ConversationTile extends StatelessWidget {
       timeStr = '${conversation.updatedAt.day}/${conversation.updatedAt.month}';
     }
 
-    final avatarGradient = AppTheme.avatarGradient(displayName.codeUnitAt(0));
-
     return Container(
       color: isSelected ? cs.primary.withValues(alpha: 0.12) : null,
       child: InkWell(
@@ -461,58 +456,18 @@ class _ConversationTile extends StatelessWidget {
         child: Column(
           children: [
             Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            child: Row(
-              children: [
-                // Avatar with online ring
-                Stack(
-                  children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: avatarGradient,
-                        boxShadow: [
-                          BoxShadow(
-                            color: avatarGradient.colors.first.withValues(alpha: 0.3),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          initial,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 20,
-                          ),
-                        ),
-                      ),
-                    ),
-                    // Online indicator
-                    Positioned(
-                      bottom: 1,
-                      right: 1,
-                      child: Container(
-                        width: 14,
-                        height: 14,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: const Color(0xFF22C55E),
-                          border: Border.all(
-                            color: Theme.of(context).scaffoldBackgroundColor,
-                            width: 2,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(width: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              child: Row(
+                children: [
+                  AppAvatar(
+                    avatarUrl: conversation.getDisplayAvatarUrl(currentUserId),
+                    name: displayName,
+                    size: 54,
+                    showOnline: true,
+                    isOnline: true,
+                    fontSize: 20,
+                  ),
+                  const SizedBox(width: 14),
 
                 // Name + preview
                 Expanded(

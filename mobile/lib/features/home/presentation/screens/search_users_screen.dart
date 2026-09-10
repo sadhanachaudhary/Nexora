@@ -6,7 +6,7 @@ import '../../../chat/data/repositories/user_repository.dart';
 import '../../../chat/data/repositories/chat_repository.dart';
 import '../../../chat/domain/models/user.dart';
 import '../../../chat/presentation/providers/conversations_provider.dart';
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/app_avatar.dart';
 
 final searchUsersProvider = FutureProvider.family<List<User>, String>((ref, query) async {
   return ref.watch(userRepositoryProvider).searchUsers(query.trim());
@@ -473,8 +473,6 @@ class _UserCard extends StatelessWidget {
     final cs = Theme.of(context).colorScheme;
     final tt = Theme.of(context).textTheme;
     final displayName = user.name ?? user.username;
-    final initial = displayName.isNotEmpty ? displayName[0].toUpperCase() : '?';
-    final avatarGradient = AppTheme.avatarGradient(displayName.codeUnitAt(0));
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
@@ -490,31 +488,11 @@ class _UserCard extends StatelessWidget {
           ),
           child: Row(
             children: [
-              // Gradient avatar
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: avatarGradient,
-                  boxShadow: [
-                    BoxShadow(
-                      color: avatarGradient.colors.first.withValues(alpha: 0.3),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: Text(
-                    initial,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 18,
-                    ),
-                  ),
-                ),
+              AppAvatar(
+                avatarUrl: user.avatarUrl,
+                name: displayName,
+                size: 50,
+                fontSize: 18,
               ),
               const SizedBox(width: 14),
               Expanded(
