@@ -178,9 +178,9 @@ class ChatDetailsScreen extends ConsumerWidget {
       itemBuilder: (context, index) {
         final member = conversation.members[index];
         final user = member.user;
-        final isMe = member.userId == currentUserId;
-        final name = isMe ? 'You' : (user?.name ?? user?.username ?? 'Member');
-        final email = user?.email ?? user?.username ?? '';
+        final isMe = user.id == currentUserId;
+        final name = isMe ? 'You' : (user.name ?? user.username);
+        final email = user.email ?? user.username;
         final initial = name.isNotEmpty ? name[0].toUpperCase() : '?';
         final gradient = AppTheme.avatarGradient(name.codeUnitAt(0));
 

@@ -564,8 +564,9 @@ class _ConversationTile extends StatelessWidget {
             ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
 
 // ── Split screen empty placeholder ─────────────────────────────────────────────

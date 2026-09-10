@@ -1772,12 +1772,12 @@ class _LocationBubbleWidget extends StatelessWidget {
       width: 220,
       margin: const EdgeInsets.only(bottom: 4),
       decoration: BoxDecoration(
-        color: widget.isMe
+        color: isMe
             ? Colors.white.withValues(alpha: 0.15)
             : cs.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: widget.isMe
+          color: isMe
               ? Colors.white.withValues(alpha: 0.2)
               : cs.outline.withValues(alpha: 0.2),
         ),
@@ -1836,7 +1836,7 @@ class _LocationBubbleWidget extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 13,
-                    color: widget.isMe ? Colors.white : cs.onSurface,
+                    color: isMe ? Colors.white : cs.onSurface,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -1844,7 +1844,7 @@ class _LocationBubbleWidget extends StatelessWidget {
                   '${lat.toStringAsFixed(4)}°, ${lng.toStringAsFixed(4)}°',
                   style: TextStyle(
                     fontSize: 11,
-                    color: widget.isMe
+                    color: isMe
                         ? Colors.white.withValues(alpha: 0.7)
                         : cs.onSurface.withValues(alpha: 0.5),
                   ),
