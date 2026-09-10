@@ -118,4 +118,45 @@ export class ConversationService {
 
     return conversation;
   }
+
+  async createGroupConversation(userId: string, name: string, memberIds: string[]) {
+    if (!name || name.trim().length === 0) {
+      throw new Error('Group name is required');
+    }
+
+    const uniqueMemberIds = Array.from(new Set([userId, ...memberIds]));
+    if (uniqueMemberIds.length < 2) {
+      throw new Error('A group must have at least 2 members');
+    }
+
+    const conversation = await prisma.conversation.create({
+      data: {
+        isGroup: true,
+        name: name.trim(),
+        members: {
+          create: uniqueMemberIds.map((mId) => ({
+            userId: mId,
+            role: mId === userId ? 'ADMIN' : 'MEMBER',
+          })),
+        },
+      },
+      include: {
+        members: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                username: true,
+                email: true,
+                name: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return conversation;
+  }
 }

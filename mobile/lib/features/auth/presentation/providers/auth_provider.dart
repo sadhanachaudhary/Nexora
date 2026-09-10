@@ -5,6 +5,8 @@ import '../../data/repositories/auth_repository.dart';
 import '../../../chat/data/repositories/user_repository.dart';
 import '../../../chat/presentation/providers/conversations_provider.dart';
 
+import '../../../../core/config/app_config.dart';
+
 const secureStorage = FlutterSecureStorage();
 
 final authProvider = NotifierProvider<AuthNotifier, AuthState>(() {
@@ -32,7 +34,7 @@ class AuthNotifier extends Notifier<AuthState> {
 
     // Verify the token is still valid against the server
     try {
-      final dio = Dio(BaseOptions(baseUrl: 'http://127.0.0.1:3001/api'));
+      final dio = Dio(BaseOptions(baseUrl: AppConfig.baseUrl));
       dio.options.headers['Authorization'] = 'Bearer $token';
       await dio.get('/users/me');
       // Token is valid

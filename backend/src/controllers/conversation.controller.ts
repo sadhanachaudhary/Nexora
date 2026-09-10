@@ -35,4 +35,21 @@ export class ConversationController {
       res.status(400).json({ error: error.message });
     }
   };
+
+  createGroupConversation = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      const userId = req.user.id;
+      const { name, memberIds } = req.body;
+
+      if (!name || !memberIds || !Array.isArray(memberIds)) {
+        res.status(400).json({ error: 'Group name and an array of memberIds are required' });
+        return;
+      }
+
+      const conversation = await this.conversationService.createGroupConversation(userId, name, memberIds);
+      res.status(201).json(conversation);
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  };
 }

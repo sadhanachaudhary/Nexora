@@ -50,4 +50,12 @@ class ChatRepository {
     });
     return Conversation.fromJson(response.data);
   }
+
+  Future<Conversation> createGroupConversation(String name, List<String> memberIds) async {
+    final response = await _dio.post('/conversations/group', data: {
+      'name': name.trim(),
+      'memberIds': memberIds,
+    });
+    return Conversation.fromJson(response.data);
+  }
 }

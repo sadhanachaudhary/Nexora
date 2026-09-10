@@ -264,6 +264,68 @@ class _SearchUsersScreenState extends ConsumerState<SearchUsersScreen> {
                   ),
                 ),
 
+                // ── Create New Group Action ────────────────────
+                if (_query.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    child: InkWell(
+                      onTap: () => context.push('/create-group'),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: cs.surfaceContainer,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: cs.outline.withValues(alpha: 0.25)),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: const BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [Color(0xFF7C3AED), Color(0xFF4F46E5)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.group_add_rounded,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Create New Group',
+                                    style: tt.bodyLarge?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  Text(
+                                    'Chat with multiple friends or teammates',
+                                    style: tt.bodySmall?.copyWith(
+                                      color: cs.onSurface.withValues(alpha: 0.5),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Icon(
+                              Icons.chevron_right_rounded,
+                              color: cs.onSurface.withValues(alpha: 0.3),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+
                 // ── Direct Add by Email Card when email pattern detected ──
                 if (isEmailQuery)
                   Padding(

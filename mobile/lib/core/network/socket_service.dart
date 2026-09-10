@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
+import '../config/app_config.dart';
+
 class SocketService {
   IO.Socket? _socket;
   final FlutterSecureStorage _storage;
@@ -28,7 +30,7 @@ class SocketService {
     if (token == null) return;
 
     _socket = IO.io(
-      'http://127.0.0.1:3001',
+      AppConfig.socketUrl,
       IO.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()

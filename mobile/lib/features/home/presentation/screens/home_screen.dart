@@ -95,12 +95,95 @@ class HomeScreen extends ConsumerWidget {
       ),
 
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          await context.push('/search');
-          ref.invalidate(conversationsProvider);
-        },
+        onPressed: () => _showNewChatMenu(context, ref),
         icon: const Icon(Icons.add_rounded, size: 22),
         label: const Text('New Chat', style: TextStyle(fontWeight: FontWeight.w700)),
+      ),
+    );
+  }
+
+  void _showNewChatMenu(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+    final tt = Theme.of(context).textTheme;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+        decoration: BoxDecoration(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          border: Border(top: BorderSide(color: cs.outline.withValues(alpha: 0.2))),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: cs.onSurface.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              Text(
+                'Start a Conversation',
+                style: tt.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                tileColor: cs.surfaceContainer,
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: cs.primary.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.person_add_rounded, color: cs.primary, size: 22),
+                ),
+                title: Text('New Direct Chat', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                subtitle: Text('Search contacts or invite via email', style: tt.bodySmall?.copyWith(color: cs.onSurface.withValues(alpha: 0.6))),
+                trailing: Icon(Icons.chevron_right_rounded, color: cs.onSurface.withValues(alpha: 0.4)),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await context.push('/search');
+                  ref.invalidate(conversationsProvider);
+                },
+              ),
+              const SizedBox(height: 12),
+              ListTile(
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                tileColor: cs.surfaceContainer,
+                leading: Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981).withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.group_add_rounded, color: Color(0xFF10B981), size: 22),
+                ),
+                title: Text('New Group Chat', style: tt.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
+                subtitle: Text('Add multiple friends into a team room', style: tt.bodySmall?.copyWith(color: cs.onSurface.withValues(alpha: 0.6))),
+                trailing: Icon(Icons.chevron_right_rounded, color: cs.onSurface.withValues(alpha: 0.4)),
+                onTap: () async {
+                  Navigator.pop(ctx);
+                  await context.push('/create-group');
+                  ref.invalidate(conversationsProvider);
+                },
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        ),
       ),
     );
   }

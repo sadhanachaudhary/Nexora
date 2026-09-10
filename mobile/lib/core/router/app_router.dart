@@ -6,6 +6,7 @@ import '../../features/auth/presentation/screens/register_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/chat/presentation/screens/chat_screen.dart';
 import '../../features/home/presentation/screens/search_users_screen.dart';
+import '../../features/home/presentation/screens/create_group_screen.dart';
 import '../../features/profile/presentation/screens/profile_screen.dart';
 import '../../features/profile/presentation/screens/edit_profile_screen.dart';
 
@@ -49,6 +50,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/search',
         builder: (context, state) => const SearchUsersScreen(),
+      ),
+      GoRoute(
+        path: '/create-group',
+        builder: (context, state) => const CreateGroupScreen(),
       ),
       GoRoute(
         path: '/profile',
