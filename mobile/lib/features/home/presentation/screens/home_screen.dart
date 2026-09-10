@@ -120,10 +120,44 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         ],
       ),
 
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showNewChatMenu(context, ref),
-        icon: const Icon(Icons.add_rounded, size: 22),
-        label: const Text('New Chat', style: TextStyle(fontWeight: FontWeight.w700)),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: cs.primary.withValues(alpha: 0.22),
+              blurRadius: 18,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Material(
+          color: cs.primary,
+          borderRadius: BorderRadius.circular(16),
+          child: InkWell(
+            onTap: () => _showNewChatMenu(context, ref),
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(Icons.add_rounded, color: Colors.white, size: 22),
+                  SizedBox(width: 8),
+                  Text(
+                    'New Chat',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
 
@@ -261,29 +295,37 @@ class _EmptyState extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 96,
-              height: 96,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [
-                    cs.primary.withValues(alpha: 0.15),
-                    cs.primary.withValues(alpha: 0.05),
-                  ],
+                color: cs.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: cs.primary.withValues(alpha: 0.12),
+                  width: 1.5,
                 ),
               ),
-              child: Icon(Icons.chat_bubble_outline_rounded,
-                  size: 44, color: cs.primary.withValues(alpha: 0.5)),
+              child: Icon(
+                Icons.chat_bubble_outline_rounded,
+                size: 38,
+                color: cs.primary,
+              ),
             ),
             const SizedBox(height: 20),
-            Text('No conversations yet',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            Text(
+              'No conversations yet',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
-                    color: cs.onSurface.withValues(alpha: 0.5))),
+                    color: cs.onSurface.withValues(alpha: 0.7),
+                  ),
+            ),
             const SizedBox(height: 6),
-            Text('Tap + to start a new chat',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: cs.onSurface.withValues(alpha: 0.35))),
+            Text(
+              'Tap "+ New Chat" below to start messaging',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: cs.onSurface.withValues(alpha: 0.45),
+                  ),
+            ),
           ],
         ),
       ),
@@ -430,7 +472,15 @@ class _ConversationTile extends StatelessWidget {
     final lastMsg = conversation.latestMessage;
     String subtitle = 'Tap to chat';
     if (lastMsg != null) {
-      subtitle = lastMsg.type == 'IMAGE' ? '📷 Photo' : (lastMsg.content ?? 'Tap to chat');
+      if (lastMsg.type == 'IMAGE') {
+        subtitle = '📷 Photo';
+      } else if (lastMsg.type == 'AUDIO') {
+        subtitle = '🎙️ Voice note';
+      } else if (lastMsg.type == 'LOCATION') {
+        subtitle = '📍 Shared location';
+      } else {
+        subtitle = lastMsg.content ?? 'Tap to chat';
+      }
     }
 
     // Time display
@@ -449,79 +499,99 @@ class _ConversationTile extends StatelessWidget {
       timeStr = '${conversation.updatedAt.day}/${conversation.updatedAt.month}';
     }
 
-    return Container(
-      color: isSelected ? cs.primary.withValues(alpha: 0.12) : null,
-      child: InkWell(
-        onTap: onTap,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              child: Row(
-                children: [
-                  AppAvatar(
-                    avatarUrl: conversation.getDisplayAvatarUrl(currentUserId),
-                    name: displayName,
-                    size: 54,
-                    showOnline: true,
-                    isOnline: true,
-                    fontSize: 20,
-                  ),
-                  const SizedBox(width: 14),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      child: Material(
+        color: isSelected
+            ? cs.primary.withValues(alpha: 0.08)
+            : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          hoverColor: cs.primary.withValues(alpha: 0.04),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: isSelected
+                  ? Border.all(
+                      color: cs.primary.withValues(alpha: 0.25),
+                      width: 1,
+                    )
+                  : null,
+            ),
+            child: Row(
+              children: [
+                AppAvatar(
+                  avatarUrl: conversation.getDisplayAvatarUrl(currentUserId),
+                  name: displayName,
+                  size: 52,
+                  showOnline: true,
+                  isOnline: true,
+                  fontSize: 20,
+                ),
+                const SizedBox(width: 14),
 
                 // Name + preview
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        displayName,
-                        style: tt.bodyLarge?.copyWith(fontWeight: FontWeight.w700),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              displayName,
+                              style: tt.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: isSelected
+                                    ? cs.primary
+                                    : cs.onSurface,
+                                letterSpacing: -0.2,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Plain right-aligned muted timestamp text (no pill background)
+                          Text(
+                            timeStr,
+                            style: tt.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w500,
+                              color: isSelected
+                                  ? cs.primary.withValues(alpha: 0.8)
+                                  : cs.onSurface.withValues(alpha: 0.45),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 3),
+                      const SizedBox(height: 4),
                       Text(
                         subtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: tt.bodyMedium?.copyWith(
-                            color: cs.onSurface.withValues(alpha: 0.5)),
+                          color: isSelected
+                              ? cs.onSurface.withValues(alpha: 0.7)
+                              : cs.onSurface.withValues(alpha: 0.55),
+                          fontSize: 13.5,
+                          height: 1.3,
+                        ),
                       ),
                     ],
-                  ),
-                ),
-
-                const SizedBox(width: 10),
-
-                // Timestamp pill
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: cs.surfaceContainer,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    timeStr,
-                    style: tt.bodySmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: cs.onSurface.withValues(alpha: 0.45),
-                    ),
                   ),
                 ),
               ],
             ),
           ),
-          if (!isLast)
-            Divider(
-              height: 1,
-              indent: 90,
-              endIndent: 20,
-              color: cs.outline.withValues(alpha: 0.2),
-            ),
-        ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 }
 
 // ── Split screen empty placeholder ─────────────────────────────────────────────
@@ -533,54 +603,81 @@ class _SplitEmptyChatPlaceholder extends StatelessWidget {
     final tt = Theme.of(context).textTheme;
 
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            width: 88,
-            height: 88,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: LinearGradient(
-                colors: [
-                  const Color(0xFF7C3AED).withValues(alpha: 0.2),
-                  const Color(0xFF4F46E5).withValues(alpha: 0.1),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF7C3AED).withValues(alpha: 0.15),
-                  blurRadius: 24,
-                  offset: const Offset(0, 8),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 420),
+        padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 36),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Soft monochromatic / light-themed container icon
+            Container(
+              width: 84,
+              height: 84,
+              decoration: BoxDecoration(
+                color: cs.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: cs.primary.withValues(alpha: 0.12),
+                  width: 1.5,
                 ),
-              ],
+              ),
+              child: Icon(
+                Icons.forum_rounded,
+                size: 40,
+                color: cs.primary,
+              ),
             ),
-            child: const Icon(
-              Icons.chat_bubble_outline_rounded,
-              size: 40,
-              color: Color(0xFF7C3AED),
+            const SizedBox(height: 24),
+            Text(
+              'Nexora for Desktop & Web',
+              style: tt.headlineSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.4,
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          Text(
-            'Nexora Desktop',
-            style: tt.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.5,
+            const SizedBox(height: 10),
+            Text(
+              'Select any conversation from the sidebar to start messaging, share voice notes, send photos, and share real-time location.',
+              textAlign: TextAlign.center,
+              style: tt.bodyMedium?.copyWith(
+                color: cs.onSurface.withValues(alpha: 0.55),
+                height: 1.5,
+                fontSize: 14,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Select a conversation on the left to start chatting,\nor tap + to start a new chat or create a group room.',
-            textAlign: TextAlign.center,
-            style: tt.bodyMedium?.copyWith(
-              color: cs.onSurface.withValues(alpha: 0.5),
-              height: 1.5,
+            const SizedBox(height: 24),
+            // Lightweight security badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: cs.surfaceContainer.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: cs.outline.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.lock_outline_rounded,
+                    size: 14,
+                    color: cs.onSurface.withValues(alpha: 0.5),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'End-to-End Encrypted',
+                    style: tt.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: cs.onSurface.withValues(alpha: 0.6),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

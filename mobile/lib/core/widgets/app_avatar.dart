@@ -63,15 +63,22 @@ class AppAvatar extends StatelessWidget {
             bottom: 0,
             right: 0,
             child: Container(
-              width: (size * 0.28).clamp(10.0, 16.0),
-              height: (size * 0.28).clamp(10.0, 16.0),
+              width: (size * 0.28).clamp(12.0, 16.0),
+              height: (size * 0.28).clamp(12.0, 16.0),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: isOnline ? const Color(0xFF22C55E) : Colors.grey,
+                color: isOnline ? const Color(0xFF22C55E) : Colors.grey.shade400,
                 border: Border.all(
-                  color: Theme.of(context).scaffoldBackgroundColor,
-                  width: 2,
+                  color: Theme.of(context).colorScheme.surface,
+                  width: 2.5,
                 ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.12),
+                    blurRadius: 3,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
               ),
             ),
           ),
